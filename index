@@ -42,6 +42,20 @@
   }
   textarea:focus{outline:none; border-color:var(--cyan); box-shadow:0 0 0 3px rgba(94,231,255,.12);}
 
+  .attach-row{display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  .attach-btn{
+    display:inline-block; font-size:12px; letter-spacing:1px; color:var(--cyan);
+    border:1px dashed var(--cyan-dim); padding:6px 12px; border-radius:8px;
+  }
+  .attach-btn:active{background:rgba(94,231,255,.08);}
+  .file-chip{
+    display:flex; align-items:center; gap:6px; font-size:12px; color:var(--amber);
+    border:1px solid var(--amber); padding:4px 10px; border-radius:12px;
+  }
+  .file-chip button{
+    background:none; border:none; color:var(--amber); font-size:14px; padding:0; line-height:1;
+  }
+
   button.run{
     margin-top:12px; width:100%; padding:14px; background:transparent;
     border:1px solid var(--cyan); color:var(--cyan); font-family:'Orbitron',sans-serif;
@@ -89,6 +103,16 @@
   </div>
 
   <textarea id="input" placeholder="อธิบายปัญหาโค้ด หรือสิ่งที่อยากให้เขียน..."></textarea>
+
+  <div class="attach-row">
+    <label class="attach-btn" for="fileInput">📎 แนบไฟล์โค้ด</label>
+    <input type="file" id="fileInput" accept=".js,.gs,.html,.css,.txt,.json,.py,.java,.ts,.jsx,.tsx" onchange="handleFile(event)" style="display:none;">
+    <span class="file-chip" id="fileChip" style="display:none;">
+      <span id="fileName"></span>
+      <button onclick="clearFile()">×</button>
+    </span>
+  </div>
+
   <button class="run" id="runBtn" onclick="run()">▶ RUN DIAGNOSTIC</button>
 
   <div class="panel" id="p1">
@@ -133,6 +157,27 @@
   </div>
 
 <script>
+let attachedContent = '';
+let attachedName = '';
+
+function handleFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    attachedContent = ev.target.result;
+    attachedName = file.name;
+    document.getElementById('fileName').textContent = file.name + ' (' + Math.round(file.size/1024) + 'KB)';
+    document.getElementById('fileChip').style.display = 'flex';
+  };
+  reader.readAsText(file);
+}
+function clearFile(){
+  attachedContent = ''; attachedName = '';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileChip').style.display = 'none';
+}
+
 function run(){
   const input = document.getElementById('input').value.trim();
   if(!input) return;
@@ -150,7 +195,7 @@ function run(){
   google.script.run
     .withSuccessHandler(onDone)
     .withFailureHandler(onFail)
-    .runJarvisPipeline(input);
+    .runJarvisPipeline(input, attachedContent);
 }
 
 function onDone(result){
