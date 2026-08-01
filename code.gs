@@ -43,7 +43,7 @@ function planFix_(analysis) {
 
 function writeCode_(plan) {
   const prompt = 'คุณคือโปรแกรมเมอร์ เขียนโค้ดตามแผนนี้ให้ครบถ้วน ใส่คอมเมนต์อธิบายสั้นๆ\n\nแผน: ' + plan;
-  return callOpenRouter_(prompt, 'qwen/qwen3-coder:free');
+return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free');
 }
 
 function reviewCode_(code) {
