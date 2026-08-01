@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <!-- นำเข้าฟอนต์ภาษาไทยและไอคอน -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --core-bg: rgba(22, 27, 34, 0.85);
+      --text-color: #c9d1d9;
+      --accent-cyan: #58a6ff;
+      --accent-cyan-glow: rgba(88, 166, 255, 0.4);
+      --accent-expert: #7ee787; /* สีเขียวโหมดผู้เชี่ยวชาญ */
+      --accent-expert-glow: rgba(126, 231, 135, 0.4);
+      --accent-magenta: #f778ba;
+      --border-color: #30363d;
+    }
+
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+
+    .assistant-core {
+      background-color: var(--core-bg);
+      backdrop-filter: blur(12px);
+      width: 100%;
+      max-width: 480px;
+      padding: 30px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+      box-sizing: border-box;
+    }
+
+    .core-header {
+      text-align: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
+    }
+
+    .core-header h1 {
+      font-family: 'Orbitron', 'Prompt', sans-serif;
+      color: var(--accent-cyan);
+      font-size: 1.8rem;
+      margin: 0;
+      letter-spacing: 2px;
+    }
+
+    /* กล่องแสดงสถานะผู้เชี่ยวชาญ */
+    .expert-status-card {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--accent-expert);
+      padding: 12px 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px var(--accent-expert-glow);
+    }
+
+    .status-badge {
+      color: var(--accent-expert);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .input-group { margin-bottom: 18px; }
+    label { display: block; margin-bottom: 8px; color: #8b949e; font-size: 0.9rem; }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      background-color: rgba(13, 17, 23, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-color);
+      font-family: 'Prompt', sans-serif;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      transition: all 0.3s;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-cyan-glow);
+    }
+
+    /* ปุ่มกดต่าง ๆ */
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: 'Prompt', sans-serif;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      margin-top: 5px;
+    }
+
+    .btn-set-expert {
+      background: transparent;
+      border: 1px solid var(--accent-expert);
+      color: var(--accent-expert);
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    .btn-set-expert:hover {
+      background: var(--accent-expert);
+      color: #000;
+    }
+
+    .btn-search {
+      background-color: transparent;
+      border: 2px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    .btn-search:hover {
+      background-color: var(--accent-cyan);
+      color: #000;
+      box-shadow: 0 0 15px var(--accent-cyan-glow);
+    }
+
+    .btn-save {
+      background-color: transparent;
+      border: 2px solid var(--accent-magenta);
+      color: var(--accent-magenta);
+    }
+
+    .btn-save:hover {
+      background-color: var(--accent-magenta);
+      color: #000;
+    }
+
+    #result, #saveStatus {
+      margin-top: 15px;
+      padding: 12px;
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      font-size: 0.9rem;
+      word-break: break-word;
+    }
+
+    #result a { color: var(--accent-cyan); text-decoration: none; font-weight: 500; }
+    #result a:hover { text-decoration: underline; }
+    #saveStatus { color: var(--accent-magenta); }
+  </style>
+</head>
+<body>
+
+<div class="assistant-core">
+  <div class="core-header">
+    <h1>NEXUS CORE AI</h1>
+    <div style="font-size: 0.85rem; color: #8b949e; margin-top: 5px;">ผู้ช่วยอัจฉริยะเอนกประสงค์พร้อมรับคำสั่ง</div>
+  </div>
+
+  <!-- สถานะผู้เชี่ยวชาญปัจจุบัน -->
+  <div class="expert-status-card">
+    <i class="fas fa-user-ninja" style="color: var(--accent-expert);"></i> 
+    <span>โหมดปัจจุบัน:</span> 
+    <span id="currentExpertLabel" class="status-badge">ผู้เชี่ยวชาญทั่วไป (General Expert)</span>
+  </div>
+
+  <!-- ตั้งค่า/เปลี่ยนโหมดผู้เชี่ยวชาญ -->
+  <div class="input-group">
+    <label><i class="fas fa-sliders-h"></i> สั่งเปลี่ยนความเชี่ยวชาญเฉพาะทาง:</label>
+    <input type="text" id="expertInput" placeholder="พิมพ์สายงาน เช่น เขียนโค้ด, การเงิน, การตลาด, กฎหมาย...">
+    <button class="btn btn-set-expert" onclick="changeExpertMode()">
+      <i class="fas fa-sync-alt"></i> ยืนยันเปลี่ยนโหมดผู้เชี่ยวชาญ
+    </button>
+  </div>
+
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #30363d;">
+
+  <!-- ช่องพิมพ์สั่งงาน/ค้นหา (เรื่องอะไรก็ได้) -->
+  <div class="input-group">
+    <label><i class="fas fa-terminal"></i> พิมพ์คำสั่ง / เรื่องที่ต้องการให้ค้นหา:</label>
+    <textarea id="taskInput" rows="3" placeholder="พิมพ์เรื่องที่อยากรู้ เช่น แก้ไขโค้ดนี้ยังไง, วิเคราะห์เทรนด์ตลาด, หาข้อมูลเอกสาร..."></textarea>
+  </div>
+  
+  <button class="btn btn-search" onclick="runSearch()"><i class="fas fa-search"></i> ค้นหาข้อมูลเชิงลึกผ่าน Google</button>
+
+  <div id="result">ผลการค้นหาและวิเคราะห์จะแสดงตรงนี้...</div>
+
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #30363d;">
+
+  <!-- ช่องบันทึกความจำ -->
+  <div class="input-group">
+    <label><i class="fas fa-sticky-note"></i> โน้ตบันทึกความจำเพิ่มเติม:</label>
+    <input type="text" id="noteInput" placeholder="สรุปสั้นๆ หรือจดจำรายละเอียดเพิ่มเติม...">
+  </div>
+  
+  <button class="btn btn-save" onclick="runSave()"><i class="fas fa-brain"></i> บันทึกลงหน่วยความจำ (Google Sheets)</button>
+  
+  <div id="saveStatus"></div>
+</div>
+
+<script>
+  // ตัวแปรเก็บโหมดผู้เชี่ยวชาญปัจจุบัน (ค่าเริ่มต้น)
+  var activeExpertRole = "ผู้เชี่ยวชาญทั่วไป";
+
+  // 1. ฟังก์ชันเปลี่ยนโหมดผู้เชี่ยวชาญ
+  function changeExpertMode() {
+    var newRole = document.getElementById('expertInput').value.trim();
+    if(!newRole) { 
+      alert("กรุณาพิมพ์ระบุสายงานที่ต้องการให้ AI เป็นผู้เชี่ยวชาญครับ"); 
+      return; 
+    }
+    
+    activeExpertRole = newRole; // อัปเดตโหมดปัจจุบัน
+    document.getElementById('currentExpertLabel').innerText = "ผู้เชี่ยวชาญด้าน: " + activeExpertRole;
+    document.getElementById('expertInput').value = ""; // เคลียร์ช่องพิมพ์
+    alert("เปลี่ยนโหมดเป็นผู้เชี่ยวชาญด้าน [" + activeExpertRole + "] เรียบร้อยแล้ว!");
+  }
+
+  // 2. ฟังก์ชันสั่งค้นหาข้อมูล
+  function runSearch() {
+    var task = document.getElementById('taskInput').value;
+    if(!task) { alert("กรุณาพิมพ์เรื่องที่ต้องการค้นหาก่อนครับ"); return; }
+    
+    document.getElementById('result').innerHTML = "⏳ AI ในโหมด [" + activeExpertRole + "] กำลังค้นหาข้อมูล...";
+
+    // ส่งเรื่องที่สั่ง + โหมดผู้เชี่ยวชาญ ไปให้หลังบ้าน
+    google.script.run
+      .withSuccessHandler(function(response) {
+        document.getElementById('result').innerHTML = 
+          "<p><i class='fas fa-external-link-alt'></i> <a href='" + response.googleLink + "' target='_blank'>[เปิด Google] ดูผลการค้นหาเชิงลึกโดย " + response.expertRole + "</a></p>";
+      })
+      .searchData(task, activeExpertRole);
+  }
+
+  // 3. ฟังก์ชันสั่งบันทึกลง Sheets
+  function runSave() {
+    var task = document.getElementById('taskInput').value;
+    var note = document.getElementById('noteInput').value;
+    
+    if(!task) { alert("กรุณาพิมพ์หัวข้อเรื่องก่อนทำการบันทึกครับ"); return; }
+    
+    document.getElementById('saveStatus').innerHTML = "⏳ กำลังบันทึกลงหน่วยความจำ...";
+
+    google.script.run
+      .withSuccessHandler(function(msg) {
+        document.getElementById('saveStatus').innerHTML = "✅ " + msg;
+        document.getElementById('noteInput').value = "";
+      })
+      .saveToSheet(task, note, activeExpertRole);
+  }
+</script>
+
+</body>
+</html>
