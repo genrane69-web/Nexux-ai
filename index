@@ -1,427 +1,155 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  
-  <style>
-    :root {
-      --bg-color: #0d1117;
-      --core-bg: rgba(22, 27, 34, 0.85);
-      --text-color: #c9d1d9;
-      --accent-cyan: #58a6ff;
-      --accent-cyan-glow: rgba(88, 166, 255, 0.4);
-      --accent-expert: #7ee787;
-      --accent-expert-glow: rgba(126, 231, 135, 0.4);
-      --accent-magenta: #f778ba;
-      --accent-purple: #a371f7;
-      --accent-purple-glow: rgba(163, 113, 247, 0.4);
-      --border-color: #30363d;
-    }
+<base target="_top">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070b10; --panel:#0d1620; --border:#1c2c38;
+    --cyan:#5ee7ff; --cyan-dim:#274652; --amber:#ffb454;
+    --text:#dce8ee; --text-dim:#5c7282; --danger:#ff6b6b; --ok:#5eff9d;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    padding:20px 16px 60px; min-height:100vh;
+    background-image:radial-gradient(circle at 50% 0%, #0d1a24 0%, #070b10 60%);
+  }
+  .header{display:flex; align-items:center; gap:14px; margin-bottom:22px;}
+  .ring{
+    width:40px;height:40px;border-radius:50%;
+    border:2px solid var(--cyan); position:relative; flex:0 0 auto;
+    box-shadow:0 0 12px var(--cyan-dim);
+  }
+  .ring::after{
+    content:'';position:absolute;inset:6px;border-radius:50%;
+    background:var(--cyan); opacity:.5;
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  .ring.busy{animation:spin 1s linear infinite; border-color:var(--amber); box-shadow:0 0 16px var(--amber);}
+  .ring.busy::after{background:var(--amber); animation:pulse 0.6s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.3;transform:scale(.85);}50%{opacity:.8;transform:scale(1);}}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  h1{font-family:'Orbitron',sans-serif; font-size:20px; letter-spacing:2px; margin:0;}
+  .eyebrow{font-size:11px; letter-spacing:3px; color:var(--text-dim); margin-top:2px;}
 
-    body {
-      font-family: 'Prompt', sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
-      padding: 20px;
-    }
+  textarea{
+    width:100%; background:var(--panel); border:1px solid var(--border);
+    color:var(--text); border-radius:8px; padding:12px; font-family:inherit;
+    font-size:14px; min-height:90px; resize:vertical;
+  }
+  textarea:focus{outline:none; border-color:var(--cyan); box-shadow:0 0 0 3px rgba(94,231,255,.12);}
 
-    .assistant-core {
-      background-color: var(--core-bg);
-      backdrop-filter: blur(12px);
-      width: 100%;
-      max-width: 500px;
-      padding: 30px;
-      border-radius: 20px;
-      border: 1px solid var(--border-color);
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
-      box-sizing: border-box;
-    }
+  button{
+    margin-top:12px; width:100%; padding:14px; background:transparent;
+    border:1px solid var(--cyan); color:var(--cyan); font-family:'Orbitron',sans-serif;
+    letter-spacing:2px; font-size:13px; border-radius:8px; text-transform:uppercase;
+  }
+  button:active{background:rgba(94,231,255,.1);}
+  button:disabled{border-color:var(--text-dim); color:var(--text-dim);}
 
-    .core-header {
-      text-align: center;
-      margin-bottom: 20px;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 15px;
-    }
-
-    .core-header h1 {
-      font-family: 'Orbitron', 'Prompt', sans-serif;
-      color: var(--accent-cyan);
-      font-size: 1.8rem;
-      margin: 0;
-      letter-spacing: 2px;
-    }
-
-    .expert-status-card {
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid var(--accent-expert);
-      padding: 12px 15px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 0 10px var(--accent-expert-glow);
-    }
-
-    .status-badge {
-      color: var(--accent-expert);
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
-
-    .input-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 8px; color: #8b949e; font-size: 0.9rem; }
-
-    input, textarea {
-      width: 100%;
-      padding: 12px;
-      background-color: rgba(13, 17, 23, 0.7);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      color: var(--text-color);
-      font-family: 'Prompt', sans-serif;
-      font-size: 0.95rem;
-      box-sizing: border-box;
-      transition: all 0.3s;
-    }
-
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 10px var(--accent-cyan-glow);
-    }
-
-    .btn {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: 600;
-      font-family: 'Prompt', sans-serif;
-      font-size: 0.95rem;
-      transition: all 0.3s ease;
-      margin-top: 6px;
-    }
-
-    .btn-set-expert {
-      background: transparent;
-      border: 1px solid var(--accent-expert);
-      color: var(--accent-expert);
-      padding: 8px 12px;
-      font-size: 0.85rem;
-    }
-
-    .btn-set-expert:hover {
-      background: var(--accent-expert);
-      color: #000;
-    }
-
-    /* ปุ่มสั่งงาน AI หลัก (สีม่วงเด่น) */
-    .btn-ai-cmd {
-      background-color: var(--accent-purple);
-      color: #ffffff;
-      font-size: 1rem;
-      box-shadow: 0 0 15px var(--accent-purple-glow);
-    }
-
-    .btn-ai-cmd:hover {
-      background-color: #b388ff;
-      transform: translateY(-2px);
-      box-shadow: 0 0 25px var(--accent-purple-glow);
-    }
-
-    .btn-search {
-      background-color: transparent;
-      border: 1px solid var(--accent-cyan);
-      color: var(--accent-cyan);
-    }
-
-    .btn-search:hover {
-      background-color: var(--accent-cyan);
-      color: #000;
-    }
-
-    .btn-save {
-      background-color: transparent;
-      border: 1px solid var(--accent-magenta);
-      color: var(--accent-magenta);
-    }
-
-    .btn-save:hover {
-      background-color: var(--accent-magenta);
-      color: #000;
-    }
-
-    #saveStatus {
-      margin-top: 15px;
-      padding: 12px;
-      background-color: rgba(0, 0, 0, 0.3);
-      border-radius: 10px;
-      border: 1px solid var(--border-color);
-      font-size: 0.9rem;
-      color: var(--accent-magenta);
-    }
-
-    /* สไตล์ป๊อปอัพ */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(8px);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    .modal-content {
-      background: #161b22;
-      border: 1px solid var(--accent-purple);
-      box-shadow: 0 0 35px var(--accent-purple-glow);
-      border-radius: 16px;
-      width: 100%;
-      max-width: 500px;
-      padding: 25px;
-      box-sizing: border-box;
-      animation: popupAnim 0.3s ease-out forwards;
-    }
-
-    @keyframes popupAnim {
-      0% { transform: scale(0.8); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 12px;
-      margin-bottom: 15px;
-    }
-
-    .modal-header h3 {
-      margin: 0;
-      color: var(--accent-purple);
-      font-size: 1.2rem;
-      font-family: 'Orbitron', 'Prompt', sans-serif;
-    }
-
-    .close-icon {
-      color: #8b949e;
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-
-    .close-icon:hover { color: #fff; }
-
-    .modal-body {
-      font-size: 0.95rem;
-      line-height: 1.6;
-      margin-bottom: 20px;
-    }
-
-    .code-box {
-      background: #0d1117;
-      border: 1px solid var(--border-color);
-      padding: 12px;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent-expert);
-      white-space: pre-wrap;
-      word-break: break-word;
-      margin-top: 10px;
-    }
-
-    .btn-close-modal {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-    }
-  </style>
+  .panel{
+    margin-top:16px; background:var(--panel); border:1px solid var(--border);
+    border-radius:8px; overflow:hidden; opacity:.35; transition:opacity .4s;
+  }
+  .panel.active{opacity:1;}
+  .panel-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 14px; border-bottom:1px solid var(--border); font-size:11px;
+    letter-spacing:1.5px; color:var(--text-dim);
+  }
+  .panel-head b{color:var(--cyan); font-weight:500;}
+  .status{font-size:10px; padding:2px 8px; border-radius:10px; border:1px solid var(--text-dim);}
+  .status.done{color:var(--ok); border-color:var(--ok);}
+  .status.err{color:var(--danger); border-color:var(--danger);}
+  .panel-body{
+    padding:14px; font-size:13px; line-height:1.6; white-space:pre-wrap;
+    word-break:break-word; max-height:260px; overflow-y:auto;
+  }
+</style>
 </head>
 <body>
 
-<div class="assistant-core">
-  <div class="core-header">
-    <h1>NEXUS CORE AI</h1>
-    <div style="font-size: 0.85rem; color: #8b949e; margin-top: 5px;">ศูนย์กลางสั่งงานผู้ช่วยอัจฉริยะ</div>
-  </div>
-
-  <!-- สถานะผู้เชี่ยวชาญปัจจุบัน -->
-  <div class="expert-status-card">
-    <i class="fas fa-user-ninja" style="color: var(--accent-expert);"></i> 
-    <span>โหมดปัจจุบัน:</span> 
-    <span id="currentExpertLabel" class="status-badge">ผู้เชี่ยวชาญทั่วไป</span>
-  </div>
-
-  <!-- ตั้งค่าโหมด AI -->
-  <div class="input-group">
-    <label><i class="fas fa-sliders-h"></i> กำหนดหน้าที่ AI (เช่น เขียนโค้ด HTML, นักบัญชี, กฎหมาย):</label>
-    <input type="text" id="expertInput" placeholder="พิมพ์เช่น: โปรแกรมเมอร์ภาษา HTML/JavaScript">
-    <button class="btn btn-set-expert" onclick="changeExpertMode()">
-      <i class="fas fa-sync-alt"></i> ยืนยันเปลี่ยนโหมดผู้เชี่ยวชาญ
-    </button>
-  </div>
-
-  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #30363d;">
-
-  <!-- กล่องพิมพ์สั่งงาน AI -->
-  <div class="input-group">
-    <label><i class="fas fa-terminal"></i> พิมพ์คำสั่งงานที่ต้องการให้ AI ทำงาน:</label>
-    <textarea id="taskInput" rows="3" placeholder="พิมพ์สั่งงาน เช่น: ช่วยเขียนโค้ดปุ่มกดสีฟ้าเด้งแจ้งเตือน, คำนวณภาษี..."></textarea>
-  </div>
-  
-  <!-- 🚀 ปุ่มกดสั่งงานหลัก -->
-  <button class="btn btn-ai-cmd" onclick="runAiCommand()">
-    <i class="fas fa-robot"></i> ⚡ สั่งงาน AI (เด้งหน้าต่างผลลัพธ์)
-  </button>
-  
-  <button class="btn btn-search" onclick="runSearch()">
-    <i class="fas fa-search"></i> ค้นหาลิงก์ Google เชิงลึก
-  </button>
-
-  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #30363d;">
-
-  <!-- บันทึกลง Sheets -->
-  <div class="input-group">
-    <label><i class="fas fa-sticky-note"></i> บันทึกโน้ตจำเพิ่มเติม:</label>
-    <input type="text" id="noteInput" placeholder="สรุปสั้นๆ เพิ่มเติม...">
-  </div>
-  
-  <button class="btn btn-save" onclick="runSave()"><i class="fas fa-brain"></i> บันทึกลงหน่วยความจำ (Sheets)</button>
-  
-  <div id="saveStatus" style="display: none;"></div>
-</div>
-
-<!-- 🚀 หน้าต่างป๊อปอัพ (POPUP MODAL) -->
-<div id="resultModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="modalTitle"><i class="fas fa-microchip"></i> ผลลัพธ์คำสั่งงาน</h3>
-      <span class="close-icon" onclick="closeModal()">&times;</span>
-    </div>
-    <div class="modal-body" id="modalBody">
-      <!-- ผลลัพธ์จะเด้งตรงนี้ -->
-    </div>
-    <div style="text-align: right;">
-      <button class="btn btn-close-modal" onclick="closeModal()">ปิดหน้าต่าง</button>
+  <div class="header">
+    <div class="ring" id="ring"></div>
+    <div>
+      <h1>J.A.R.V.I.S.</h1>
+      <div class="eyebrow">CODING DIAGNOSTIC PIPELINE</div>
     </div>
   </div>
-</div>
+
+  <textarea id="input" placeholder="อธิบายปัญหาโค้ด หรือสิ่งที่อยากให้เขียน..."></textarea>
+  <button id="runBtn" onclick="run()">▶ RUN DIAGNOSTIC</button>
+
+  <div class="panel" id="p1">
+    <div class="panel-head"><span><b>[01]</b> ANALYZER — GEMINI</span><span class="status" id="s1">STANDBY</span></div>
+    <div class="panel-body" id="b1"></div>
+  </div>
+  <div class="panel" id="p2">
+    <div class="panel-head"><span><b>[02]</b> PLANNER — GROQ</span><span class="status" id="s2">STANDBY</span></div>
+    <div class="panel-body" id="b2"></div>
+  </div>
+  <div class="panel" id="p3">
+    <div class="panel-head"><span><b>[03]</b> CODER — OPENROUTER</span><span class="status" id="s3">STANDBY</span></div>
+    <div class="panel-body" id="b3"></div>
+  </div>
+  <div class="panel" id="p4">
+    <div class="panel-head"><span><b>[04]</b> REVIEWER — GEMINI</span><span class="status" id="s4">STANDBY</span></div>
+    <div class="panel-body" id="b4"></div>
+  </div>
 
 <script>
-  var activeExpertRole = "ผู้เชี่ยวชาญทั่วไป";
+function run(){
+  const input = document.getElementById('input').value.trim();
+  if(!input) return;
+  const ring = document.getElementById('ring');
+  const btn = document.getElementById('runBtn');
+  ring.classList.add('busy');
+  btn.disabled = true; btn.textContent = 'PROCESSING...';
+  ['1','2','3','4'].forEach(n=>{
+    document.getElementById('s'+n).textContent='STANDBY';
+    document.getElementById('s'+n).className='status';
+    document.getElementById('p'+n).classList.remove('active');
+    document.getElementById('b'+n).textContent='';
+  });
 
-  function changeExpertMode() {
-    var newRole = document.getElementById('expertInput').value.trim();
-    if(!newRole) { alert("กรุณาพิมพ์ระบุสายงานก่อนครับ"); return; }
-    
-    activeExpertRole = newRole;
-    document.getElementById('currentExpertLabel').innerText = "ผู้เชี่ยวชาญด้าน: " + activeExpertRole;
-    document.getElementById('expertInput').value = "";
-    alert("ตั้งค่าโหมดเป็น [" + activeExpertRole + "] เรียบร้อย!");
-  }
+  google.script.run
+    .withSuccessHandler(onDone)
+    .withFailureHandler(onFail)
+    .runJarvisPipeline(input);
+}
 
-  // 1. ปุ่มสั่งงาน AI (ส่งคำสั่งให้ AI ทำงานแล้วเด้งป๊อปอัพ)
-  function runAiCommand() {
-    var task = document.getElementById('taskInput').value.trim();
-    if(!task) { alert("กรุณาพิมพ์คำสั่งงานก่อนกดปุ่มครับ"); return; }
+function onDone(result){
+  const ring = document.getElementById('ring');
+  const btn = document.getElementById('runBtn');
+  ring.classList.remove('busy');
+  btn.disabled = false; btn.textContent = '▶ RUN DIAGNOSTIC';
 
-    document.getElementById('modalTitle').innerHTML = `<i class="fas fa-robot"></i> AI รับคำสั่งงาน`;
-    document.getElementById('modalBody').innerHTML = `
-      <div style="text-align: center; padding: 20px 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-purple);"></i>
-        <p style="margin-top: 15px; color: #8b949e;">กำลังประมวลผลคำสั่งงานในโหมด <b>[${activeExpertRole}]</b>...</p>
-      </div>
-    `;
-    openModal();
+  const steps = [
+    ['1', result.analysis],
+    ['2', result.plan],
+    ['3', result.code],
+    ['4', result.review]
+  ];
+  steps.forEach(([n, text], i)=>{
+    setTimeout(()=>{
+      document.getElementById('p'+n).classList.add('active');
+      document.getElementById('s'+n).textContent='DONE';
+      document.getElementById('s'+n).className='status done';
+      document.getElementById('b'+n).textContent = text;
+    }, i*250);
+  });
+}
 
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if(res.success) {
-          document.getElementById('modalBody').innerHTML = `
-            <p><b><i class="fas fa-user-ninja" style="color: var(--accent-expert);"></i> ผู้ทำหน้าที่:</b> ${res.expertRole}</p>
-            <p><b><i class="fas fa-paper-plane"></i> คำสั่งที่คุณสั่ง:</b> ${res.task}</p>
-            <hr style="border: 0; border-top: 1px solid #30363d; margin: 15px 0;">
-            <p><b><i class="fas fa-check-circle" style="color: var(--accent-expert);"></i> สถานะระบบ:</b> ${res.status}</p>
-            <div class="code-box">ระบบได้รับคำสั่งเรียบร้อยแล้ว! พร้อมนำคำสั่งนี้ไปใช้ประมวลผลต่อตามที่คุณต้องการ</div>
-          `;
-        } else {
-          document.getElementById('modalBody').innerHTML = `<p style="color: #ff7b72;">❌ ${res.message}</p>`;
-        }
-      })
-      .processAiCommand(task, activeExpertRole);
-  }
-
-  // 2. ปุ่มค้นหา Google
-  function runSearch() {
-    var task = document.getElementById('taskInput').value.trim();
-    if(!task) { alert("กรุณาพิมพ์เรื่องที่ต้องการค้นหาก่อนครับ"); return; }
-    
-    document.getElementById('modalTitle').innerHTML = `<i class="fas fa-search"></i> ค้นหาข้อมูล Google`;
-    document.getElementById('modalBody').innerHTML = `
-      <div style="text-align: center; padding: 20px 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-cyan);"></i>
-        <p style="margin-top: 15px; color: #8b949e;">กำลังสร้างลิงก์ค้นหา Google...</p>
-      </div>
-    `;
-    openModal();
-
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if(res.success) {
-          document.getElementById('modalBody').innerHTML = `
-            <p><b><i class="fas fa-user-ninja" style="color: var(--accent-expert);"></i> ค้นหาในโหมด:</b> ${res.expertRole}</p>
-            <p><b><i class="fas fa-file-alt"></i> หัวข้อเรื่อง:</b> ${res.task}</p>
-            <hr style="border: 0; border-top: 1px solid #30363d; margin: 15px 0;">
-            <div style="text-align: center; margin-top: 15px;">
-              <a href="${res.googleLink}" target="_blank" style="display: inline-block; padding: 10px 18px; background: var(--accent-cyan); color: #000; font-weight: 600; text-decoration: none; border-radius: 8px;">
-                <i class="fas fa-external-link-alt"></i> เปิดดูผลการค้นหาบน Google
-              </a>
-            </div>
-          `;
-        } else {
-          document.getElementById('modalBody').innerHTML = `<p style="color: #ff7b72;">❌ ${res.message}</p>`;
-        }
-      })
-      .searchData(task, activeExpertRole);
-  }
-
-  function openModal() { document.getElementById('resultModal').style.display = 'flex'; }
-  function closeModal() { document.getElementById('resultModal').style.display = 'none'; }
-  function closeModalOnOverlay(e) { if (e.target.id === 'resultModal') closeModal(); }
-
-  // 3. ปุ่มบันทึก Sheets
-  function runSave() {
-    var task = document.getElementById('taskInput').value.trim();
-    var note = document.getElementById('noteInput').value.trim();
-    if(!task) { alert("กรุณาพิมพ์เรื่องก่อนบันทึกครับ"); return; }
-    
-    var statusDiv = document.getElementById('saveStatus');
-    statusDiv.style.display = 'block';
-    statusDiv.innerHTML = "⏳ กำลังบันทึกลงหน่วยความจำ...";
-
-    google.script.run
-      .withSuccessHandler(function(msg) {
-        statusDiv.innerHTML = "✅ " + msg;
-        document.getElementById('noteInput').value = "";
-      })
-      .saveToSheet(task, note, activeExpertRole);
-  }
+function onFail(err){
+  const ring = document.getElementById('ring');
+  const btn = document.getElementById('runBtn');
+  ring.classList.remove('busy');
+  btn.disabled = false; btn.textContent = '▶ RUN DIAGNOSTIC';
+  alert('เกิดข้อผิดพลาด: ' + err.message);
+}
 </script>
-
 </body>
 </html>
