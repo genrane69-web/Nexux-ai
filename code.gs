@@ -18,10 +18,11 @@ function getKey_(name) {
   return key;
 }
 
-function runJarvisPipeline(userRequest) {
-  const analysis = analyzeProblem_(userRequest);
+function runJarvisPipeline(userRequest, fileContext) {
+  fileContext = fileContext || '';
+  const analysis = analyzeProblem_(userRequest, fileContext);
   const plan = planFix_(analysis);
-  const code = writeCode_(plan);
+  const code = writeCode_(plan, fileContext);
   const review = reviewCode_(code);
   return { analysis: analysis, plan: plan, code: code, review: review };
 }
