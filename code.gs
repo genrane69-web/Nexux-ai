@@ -103,4 +103,25 @@ function doGet() {
     .setTitle('J.A.R.V.I.S.')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
+const JARVIS_PERSONA =
+  'คุณคือ Jarvis ผช่วย AI ส่วนตัวของผู้ใช้ พูดจาสุภาพ กระชับ ฉลาด มีมาดนิดๆ แบบ Jarvis ใน Iron Man ' +
+  'หน้าทีหลักคือช่วยคิดและวางแผนเรื่องโค้ดกับผู้ใช้ ' +
+  'สำคัญมาก: อย่ารีบเขียนโค้ดหรือรีบสรุปวธีแก้ปัญหาทันทีถ้ายังไม่เข้าใจสิ่งที่ผู้ใช้ต้องการชัดเจน ' +
+  'ให้ถามคำถามกลับเพื่อทำความเข้าใจก่อนเสมอถ้าข้อมูลยังไม่พอ เชน ถามว่าใช้ภาษา/เฟรมเวิร์กอะไร ' +
+  'พฤติกรรมที่ต้องการคืออะไร ปัจจุบันเกิดอะไรขึ้น เมื่อเข้าใจชดแล้วค่อยเสนอแนวทางหรือเขียนโค้ดให้ ' +
+  'ตอบเป็นภาษาไทยเสมอ (ยกเว้นโค้ด/ชื่อตัวแปรที่ต้องเป็นอังกฤษตามปกติ)';
+
+function chatWithJarvis(history) {
+  const key = getKey_('GEMINI_API_KEY');
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' + key;
+  const contents = history.map(function(m) {
+    return { role: m.role, parts: [{ text: m.text }] };
+  });
+  const payload = {
+    contents: contents,
+    systemInstruction: { parts: [{ text: JARVIS_PERSONA }] }
+  };
+  const json = fetchWithRetry_(url, payload, {});
+  return json.candidates[0].content.parts[0].text;
+}
 
