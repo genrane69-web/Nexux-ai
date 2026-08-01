@@ -1,117 +1,92 @@
 /**
- * ====================================================================
- * 🚀 NEXUS CORE AI - Backend Script (Code.gs)
- * ====================================================================
- * ไฟล์หลังบ้านสำหรับบริหารจัดการ Web App, ค้นหาข้อมูล และเชื่อมต่อหน่วยความจำ Google Sheets
+ * JARVIS CODING PIPELINE — 4 agents, 4 free providers
+ * 1) Analyzer -> Gemini (gemini-2.5-flash)
+ * 2) Planner  -> Groq (llama-3.3-70b-versatile)
+ * 3) Coder    -> OpenRouter (qwen/qwen3-coder:free)
+ * 4) Reviewer -> Gemini (gemini-2.5-flash-lite)
+ *
+ * SETUP:
+ * 1. Get free keys: aistudio.google.com/apikey , console.groq.com/keys , openrouter.ai/keys
+ * 2. Project Settings > Script Properties, add:
+ *    GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY
+ * 3. Run testPipeline() and check Logs
  */
 
-// --------------------------------------------------------------------
-// 1. ฟังก์ชันเปิดหน้าเว็บแอป (Web App Handler)
-// --------------------------------------------------------------------
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index')
-      .setTitle('Nexus Core AI - ศูนย์กลางผู้ช่วยอัจฉริยะ')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+function getKey_(name) {
+  const key = PropertiesService.getScriptProperties().getProperty(name);
+  if (!key) throw new Error('Missing Script Property: ' + name);
+  return key;
 }
 
-// --------------------------------------------------------------------
-// 2. ฟังก์ชันค้นหาหรือสร้างฐานข้อมูล Google Sheets อัตโนมัติ
-// --------------------------------------------------------------------
-function getOrCreateMemorySheet() {
-  var fileName = "Nexus_Core_Memory_DB"; // ชื่อไฟล์ Google Sheets ที่ใช้เก็บความจำ
-  
-  try {
-    // ค้นหาไฟล์ใน Google Drive
-    var files = DriveApp.getFilesByName(fileName);
-    
-    if (files.hasNext()) {
-      // กรณี 1: พบไฟล์เดิมอยู่แล้ว ให้เปิดใช้งานแผ่นงานแรกทันที
-      var existingFile = files.next();
-      return SpreadsheetApp.open(existingFile).getActiveSheet();
-    } else {
-      // กรณี 2: ยังไม่มีไฟล์ ให้สร้าง Google Sheets ใหม่ขึ้นมาบน Google Drive
-      var newSpreadsheet = SpreadsheetApp.create(fileName);
-      var sheet = newSpreadsheet.getActiveSheet();
-      
-      // กำหนดหัวตาราง (Headers)
-      var headers = ["วัน-เวลาที่บันทึก", "โหมดผู้เชี่ยวชาญ", "เรื่อง/คำสั่ง", "โน้ตบันทึกเพิ่มเติม"];
-      sheet.appendRow(headers);
-      
-      // ตกแต่งหัวตารางให้อ่านง่าย (ตัวหนา / พื้นหลังสีเข้ม / ข้อความสีขาว)
-      var headerRange = sheet.getRange(1, 1, 1, headers.length);
-      headerRange.setFontWeight("bold")
-                 .setBackground("#1f2937")
-                 .setFontColor("#ffffff");
-                 
-      // ตรึงแถวหัวตารางไว้ไม่ให้เลื่อนหาย
-      sheet.setFrozenRows(1);
-      
-      return sheet;
-    }
-  } catch (error) {
-    throw new Error("ไม่สามารถเข้าถึงหรือสร้าง Google Sheets ได้: " + error.message);
-  }
+function runJarvisPipeline(userRequest) {
+  const analysis = analyzeProblem_(userRequest);
+  const plan = planFix_(analysis);
+  const code = writeCode_(plan);
+  const review = reviewCode_(code);
+  return { analysis: analysis, plan: plan, code: code, review: review };
 }
 
-// --------------------------------------------------------------------
-// 3. ฟังก์ชันค้นหาข้อมูลผ่าน Google (ปรับแต่งตามโหมดผู้เชี่ยวชาญ)
-// --------------------------------------------------------------------
-function searchData(task, expertRole) {
-  try {
-    if (!task) {
-      return { success: false, message: "กรุณาระบุเรื่องที่ต้องการค้นหา" };
-    }
-    
-    var query = "";
-    var roleName = expertRole || "ผู้เชี่ยวชาญทั่วไป";
-
-    // ปรับแต่งคีย์เวิร์ดในการค้นหา Google ตามโหมดผู้เชี่ยวชาญที่ตั้งค่าไว้
-    if (roleName !== "ผู้เชี่ยวชาญทั่วไป") {
-      query = task + " " + roleName + " ข้อมูลเชิงลึก เอกสารอ้างอิง";
-    } else {
-      query = task;
-    }
-
-    // สร้าง URL สำหรับไปค้นหาบน Google
-    var searchUrl = "https://www.google.com/search?q=" + encodeURIComponent(query);
-    
-    return {
-      success: true,
-      task: task,
-      expertRole: roleName,
-      googleLink: searchUrl
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: "เกิดข้อผิดพลาดในการสร้างลิงก์ค้นหา: " + error.message
-    };
-  }
+function testPipeline() {
+  const result = runJarvisPipeline('ปุ่มบันทึกในฟอร์ม HTML ของฉันกดแล้วไม่บันทึกข้อมูลลง Google Sheet');
+  Logger.log(JSON.stringify(result, null, 2));
 }
 
-// --------------------------------------------------------------------
-// 4. ฟังก์ชันบันทึกข้อมูลลงใน Google Sheets
-// --------------------------------------------------------------------
-function saveToSheet(task, note, expertRole) {
-  try {
-    if (!task) {
-      return "เกิดข้อผิดพลาด: ไม่พบหัวข้อเรื่องที่จะบันทึก";
+function analyzeProblem_(userRequest) {
+  const prompt = 'คุณคือผู้ช่วยวิเคราะห์ปัญหาโค้ด อ่านคำขอนี้แล้วสรุปสั้นๆ ว่า 1) ปัญหาคืออะไร 2) น่าจะเกี่ยวข้องกับส่วนไหนของโค้ด ไม่ต้องเขียนโค้ด แค่วิเคราะห์เท่านั้น\n\nคำขอ: ' + userRequest;
+  return callGemini_(prompt, 'gemini-2.5-flash');
+}
+
+function planFix_(analysis) {
+  const prompt = 'คุณคือผู้ช่วยวางแผนแก้โค้ด จากการวิเคราะห์นี้ ให้วางแผนเป็นข้อๆ ว่าต้องทำอะไรบ้าง ไม่ต้องเขียนโค้ดจริง\n\nการวิเคราะห์: ' + analysis;
+  return callGroq_(prompt, 'llama-3.3-70b-versatile');
+}
+
+function writeCode_(plan) {
+  const prompt = 'คุณคือโปรแกรมเมอร์ เขียนโค้ดตามแผนนี้ให้ครบถ้วน ใส่คอมเมนต์อธิบายสั้นๆ\n\nแผน: ' + plan;
+  return callOpenRouter_(prompt, 'qwen/qwen3-coder:free');
+}
+
+function reviewCode_(code) {
+  const prompt = 'คุณคือผู้ตรวจโค้ด ตรวจโค้ดนี้หาบั๊กหรือจุดที่ควรปรับปรุง สรุปเป็นข้อๆ ถ้าดีอยู่แล้วตอบว่า "ผ่าน"\n\nโค้ด: ' + code;
+  return callGemini_(prompt, 'gemini-2.5-flash-lite');
+}
+
+function callGemini_(prompt, model) {
+  const key = getKey_('GEMINI_API_KEY');
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + key;
+  const payload = { contents: [{ parts: [{ text: prompt }] }] };
+  const json = fetchWithRetry_(url, payload, {});
+  return json.candidates[0].content.parts[0].text;
+}
+
+function callGroq_(prompt, model) {
+  const key = getKey_('GROQ_API_KEY');
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }] };
+  const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
+  return json.choices[0].message.content;
+}
+
+function callOpenRouter_(prompt, model) {
+  const key = getKey_('OPENROUTER_API_KEY');
+  const url = 'https://openrouter.ai/api/v1/chat/completions';
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }] };
+  const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
+  return json.choices[0].message.content;
+}
+
+function fetchWithRetry_(url, payload, extraHeaders, maxRetries) {
+  maxRetries = maxRetries || 3;
+  const options = { method: 'post', contentType: 'application/json', payload: JSON.stringify(payload), headers: extraHeaders, muteHttpExceptions: true };
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = UrlFetchApp.fetch(url, options);
+    const code = response.getResponseCode();
+    const text = response.getContentText();
+    if (code === 200) return JSON.parse(text);
+    if (code === 429 && attempt < maxRetries) {
+      Utilities.sleep(Math.pow(2, attempt) * 2000);
+      continue;
     }
-
-    // ดึงแผ่นงาน (ถ้ายังไม่มีไฟล์ มันจะสร้างไฟล์ให้เองอัตโนมัติ)
-    var sheet = getOrCreateMemorySheet();
-    
-    // ดึงวัน-เวลาปัจจุบันในประเทศไทย (GMT+7)
-    var timeStamp = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
-    var roleName = expertRole || "ผู้เชี่ยวชาญทั่วไป";
-    var noteText = note || "-";
-
-    // เพิ่มแถวข้อมูลใหม่ลงในตาราง
-    sheet.appendRow([timeStamp, roleName, task, noteText]);
-    
-    return "บันทึกความจำในโหมด [" + roleName + "] ลง Google Sheets เรียบร้อยแล้ว!";
-  } catch (error) {
-    return "เกิดข้อผิดพลาดในการบันทึก: " + error.message;
+    throw new Error('API error ' + code + ': ' + text);
   }
 }
