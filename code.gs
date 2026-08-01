@@ -1,300 +1,214 @@
-<!DOCTYPE html>
-<html>
-<head>
-<base target="_top">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#070b10; --panel:#0d1620; --border:#1c2c38;
-    --cyan:#5ee7ff; --cyan-dim:#274652; --amber:#ffb454; --text:#dce8ee; --text-dim:#5c7282; --ok:#5eff9d;
-  }
-  *{box-sizing:border-box;}
-  html,body{height:100%;margin:0;}
-  body{
-    background:var(--bg); color:var(--text); font-family:'JetBrains Mono',monospace;
-    display:flex; flex-direction:column; height:100vh;
-    background-image:radial-gradient(circle at 50% 0%, #0d1a24 0%, #070b10 60%);
-  }
-  .header{display:flex; align-items:center; gap:8px; padding:14px 16px; border-bottom:1px solid var(--border); flex:0 0 auto; flex-wrap:wrap;}
-  .ring{width:32px;height:32px;border-radius:50%; border:2px solid var(--cyan); position:relative; flex:0 0 auto; box-shadow:0 0 12px var(--cyan-dim);}
-  .ring::after{content:'';position:absolute;inset:5px;border-radius:50%;background:var(--cyan);opacity:.5;animation:pulse 2.4s ease-in-out infinite;}
-  .ring.busy{animation:spin 1s linear infinite; border-color:var(--amber); box-shadow:0 0 16px var(--amber);}
-  .ring.busy::after{background:var(--amber); animation:pulse .6s ease-in-out infinite;}
-  @keyframes pulse{0%,100%{opacity:.3;transform:scale(.85);}50%{opacity:.8;transform:scale(1);}}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  h1{font-family:'Orbitron',sans-serif; font-size:16px; letter-spacing:2px; margin:0; flex:1;}
-  .icon-btn{background:none;border:1px solid var(--border);color:var(--text-dim);font-size:14px;padding:5px 9px;border-radius:8px;}
-  .icon-btn:active{border-color:var(--cyan); color:var(--cyan);}
+/**
+ * J.A.R.V.I.S. — แชทวางแผนก่อน + Pipeline 4 เอเจนต์ (กดลงมือทำเมื่อพร้อม) + เก็บเรื่องสำคัญแยกชีท
+ */
 
-  .chat{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px;}
-  .msg{max-width:88%; padding:10px 13px; border-radius:10px; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word;}
-  .msg.user{align-self:flex-end; background:var(--panel); border:1px solid var(--cyan-dim);}
-  .msg.jarvis{align-self:flex-start; background:var(--panel); border:1px solid var(--border);}
-  .msg.jarvis .tag{display:block; font-size:10px; color:var(--cyan); letter-spacing:1.5px; margin-bottom:4px;}
-  .msg-btns{display:flex; gap:6px; margin-top:7px;}
-  .copy-btn, .star-btn{background:transparent; font-family:'JetBrains Mono',monospace; font-size:10px; padding:2px 8px; border-radius:8px;}
-  .copy-btn{border:1px solid var(--cyan-dim); color:var(--cyan);}
-  .copy-btn.copied{color:var(--ok); border-color:var(--ok);}
-  .star-btn{border:1px solid var(--amber); color:var(--amber);}
-  .star-btn.starred{color:var(--ok); border-color:var(--ok);}
-  .chat-img{max-width:100%; border-radius:8px; margin-top:6px; display:block;}
-  .typing{align-self:flex-start; font-size:11px; color:var(--text-dim); padding:0 4px;}
+const JARVIS_PERSONA =
+  'คุณคือ Jarvis ผู้ช่วย AI ส่วนตัวของผู้ใช้ พูดจาสุภาพ กระชับ ฉลาด มีมาดนิดๆ แบบ Jarvis ใน Iron Man ' +
+  'หน้าที่หลักคือช่วยคิดและวางแผนเรื่องโค้ดกับผู้ใช้ ผู้ใช้อาจแนบภาพหน้าจอมาให้ดูด้วย ' +
+  'ถ้ามีภาพแนบมา ให้ดูภาพประกอบคำถามเสมอ บอกสิ่งที่เห็นในภาพที่เกี่ยวข้องกับปัญหา ' +
+  'สำคัญมาก: อย่ารีบเขียนโค้ดหรือรีบสรุปวิธีแก้ปัญหาทันทีถ้ายังไม่เข้าใจสิ่งที่ผู้ใช้ต้องการชัดเจน ' +
+  'ให้ถามคำถามกลับเพื่อทำความเข้าใจก่อนเสมอถ้าข้อมูลยังไม่พอ เมื่อเข้าใจชัดพอแล้วให้บอกผู้ใช้ว่าพร้อมกดปุ่ม "ลงมือทำ" ได้เลย ' +
+  'ตอบเป็นภาษาไทยเสมอ (ยกเว้นโค้ด/ชื่อตัวแปรที่ต้องเป็นอังกฤษตามปกติ)';
 
-  .pcard{align-self:stretch; border:1px solid var(--cyan-dim); border-radius:10px; overflow:hidden; background:var(--panel);}
-  .psec{border-bottom:1px solid var(--border);}
-  .psec:last-child{border-bottom:none;}
-  .psec-head{display:flex; justify-content:space-between; align-items:center; padding:8px 12px; font-size:10.5px; letter-spacing:1px; color:var(--cyan); background:#0a121a;}
-  .psec-body{padding:10px 12px; font-size:13px; line-height:1.55; white-space:pre-wrap; word-break:break-word;}
-
-  .img-preview{display:none; align-items:center; gap:8px; padding:0 12px 10px;}
-  .img-preview img{height:48px; border-radius:6px; border:1px solid var(--cyan-dim);}
-  .img-preview button{background:none;border:1px solid var(--text-dim);color:var(--text-dim);border-radius:8px;font-size:11px;padding:4px 8px;}
-
-  .exec-row{padding:0 12px 8px;}
-  .exec-btn{width:100%; padding:11px; background:transparent; border:1px solid var(--amber); color:var(--amber); font-family:'Orbitron',sans-serif; letter-spacing:1.5px; font-size:12px; border-radius:8px;}
-  .exec-btn:disabled{border-color:var(--text-dim); color:var(--text-dim);}
-
-  .input-row{display:flex; gap:8px; padding:0 12px 14px; flex:0 0 auto;}
-  .attach-img-btn{background:none; border:1px solid var(--cyan-dim); color:var(--cyan); border-radius:8px; padding:0 12px; font-size:16px; flex:0 0 auto;}
-  textarea{flex:1; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:10px; font-family:inherit; font-size:14px; resize:none; max-height:100px;}
-  textarea:focus{outline:none; border-color:var(--cyan);}
-  .send-btn{background:transparent; border:1px solid var(--cyan); color:var(--cyan); border-radius:8px; padding:0 16px; font-family:'Orbitron',sans-serif; font-size:12px;}
-  .send-btn:disabled{border-color:var(--text-dim); color:var(--text-dim);}
-</style>
-</head>
-<body>
-
-  <div class="header">
-    <div class="ring" id="ring"></div>
-    <h1>J.A.R.V.I.S.</h1>
-    <button class="icon-btn" onclick="loadOldHistory()">📜 ประวัติ</button>
-    <button class="icon-btn" onclick="viewImportant()">⭐ สำคัญ</button>
-    <button class="icon-btn" onclick="clearScreen()">🧹 ล้างจอ</button>
-  </div>
-
-  <div class="chat" id="chat"></div>
-
-  <div class="img-preview" id="imgPreview">
-    <img id="previewThumb">
-    <button onclick="clearImage()">ลบรูป</button>
-  </div>
-
-  <div class="exec-row">
-    <button class="exec-btn" id="execBtn" onclick="executePipeline()">🚀 ลงมือทำจากบทสนทนานี้</button>
-  </div>
-
-  <div class="input-row">
-    <button class="attach-img-btn" onclick="document.getElementById('imgInput').click()">📷</button>
-    <input type="file" id="imgInput" accept="image/*" style="display:none;" onchange="handleImage(event)">
-    <textarea id="input" rows="1" placeholder="คุยกับ Jarvis..." onkeydown="onKey(event)"></textarea>
-    <button class="send-btn" id="sendBtn" onclick="send()">ส่ง</button>
-  </div>
-
-<script>
-let pendingImage = null;
-
-function onKey(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(); } }
-
-function addMsg(role, text){
-  const chat = document.getElementById('chat');
-  const div = document.createElement('div');
-  div.className = 'msg ' + (role === 'user' ? 'user' : 'jarvis');
-  if(role !== 'user'){
-    const tag = document.createElement('span');
-    tag.className = 'tag'; tag.textContent = 'JARVIS';
-    div.appendChild(tag);
-  }
-  const body = document.createElement('span');
-  body.textContent = text;
-  div.appendChild(body);
-
-  const btnRow = document.createElement('div');
-  btnRow.className = 'msg-btns';
-  const starBtn = document.createElement('button');
-  starBtn.className = 'star-btn'; starBtn.textContent = '☆ สำคัญ';
-  starBtn.onclick = function(){ markImportant(text, role, starBtn); };
-  btnRow.appendChild(starBtn);
-  if(role !== 'user'){
-    const cbtn = document.createElement('button');
-    cbtn.className = 'copy-btn'; cbtn.textContent = '⧉ COPY';
-    cbtn.onclick = function(){ copyText(text, cbtn); };
-    btnRow.appendChild(cbtn);
-  }
-  div.appendChild(btnRow);
-
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-  return div;
+function getKey_(name) {
+  const key = PropertiesService.getScriptProperties().getProperty(name);
+  if (!key) throw new Error('Missing Script Property: ' + name);
+  return key;
 }
 
-function addPipelineCard(result){
-  const chat = document.getElementById('chat');
-  const card = document.createElement('div');
-  card.className = 'pcard';
-  const steps = [
-    ['[01] วิเคราะห์', result.analysis],
-    ['[02] วางแผน', result.plan],
-    ['[03] เขียนโค้ด', result.code],
-    ['[04] ตรวจสอบ', result.review]
-  ];
-  steps.forEach(function(s){
-    const sec = document.createElement('div'); sec.className = 'psec';
-    const head = document.createElement('div'); head.className = 'psec-head';
-    const label = document.createElement('span'); label.textContent = s[0];
-    const btn = document.createElement('button'); btn.className='copy-btn'; btn.textContent='⧉ COPY';
-    btn.onclick = function(){ copyText(s[1], btn); };
-    head.appendChild(label); head.appendChild(btn);
-    const body = document.createElement('div'); body.className = 'psec-body'; body.textContent = s[1];
-    sec.appendChild(head); sec.appendChild(body);
-    card.appendChild(sec);
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('J.A.R.V.I.S.')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+// ---------- ฐานข้อมูล (Google Sheet) ----------
+function getSpreadsheet_() {
+  let ssId = PropertiesService.getScriptProperties().getProperty('DB_SHEET_ID');
+  let spreadsheet;
+  if (ssId) {
+    spreadsheet = SpreadsheetApp.openById(ssId);
+  } else {
+    spreadsheet = SpreadsheetApp.create('Jarvis Chat Log');
+    PropertiesService.getScriptProperties().setProperty('DB_SHEET_ID', spreadsheet.getId());
+  }
+  return spreadsheet;
+}
+
+function getDbSheet_() {
+  const spreadsheet = getSpreadsheet_();
+  let sheet = spreadsheet.getSheetByName('ChatLog');
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet('ChatLog');
+    sheet.appendRow(['timestamp', 'userId', 'role', 'text']);
+  }
+  return sheet;
+}
+
+function getImportantSheet_() {
+  const spreadsheet = getSpreadsheet_();
+  let sheet = spreadsheet.getSheetByName('Important');
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet('Important');
+    sheet.appendRow(['timestamp', 'userId', 'role', 'text']);
+  }
+  return sheet;
+}
+
+function loadHistory(userId) {
+  userId = userId || 'master';
+  const sheet = getDbSheet_();
+  const data = sheet.getDataRange().getValues();
+  const rows = data.slice(1);
+  const messages = [];
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i][1] === userId) messages.push({ role: rows[i][2], text: rows[i][3] });
+  }
+  return messages.slice(-40);
+}
+
+function saveImportant(text, role, userId) {
+  userId = userId || 'master';
+  const sheet = getImportantSheet_();
+  sheet.appendRow([new Date(), userId, role || 'user', text]);
+  return true;
+}
+
+function loadImportant(userId) {
+  userId = userId || 'master';
+  const sheet = getImportantSheet_();
+  const data = sheet.getDataRange().getValues();
+  const rows = data.slice(1);
+  const items = [];
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i][1] === userId) items.push({ role: rows[i][2], text: rows[i][3] });
+  }
+  return items;
+}
+
+// ---------- แชทหลัก ----------
+function chatWithJarvis(userText, imageData, imageMimeType, userId) {
+  userId = userId || 'master';
+  const sheet = getDbSheet_();
+  sheet.appendRow([new Date(), userId, 'user', userText]);
+
+  const key = getKey_('GEMINI_API_KEY');
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' + key;
+
+  const recent = loadHistory(userId).slice(-10);
+  const contents = recent.map(function (m, i) {
+    const isLast = i === recent.length - 1;
+    const parts = [{ text: m.text }];
+    if (isLast && imageData) {
+      parts.push({ inlineData: { mimeType: imageMimeType, data: imageData } });
+    }
+    return { role: m.role === 'model' ? 'model' : 'user', parts: parts };
   });
-  chat.appendChild(card);
-  chat.scrollTop = chat.scrollHeight;
-}
 
-function markImportant(text, role, btn){
-  google.script.run.withSuccessHandler(function(){
-    btn.textContent = '★ บันทึกแล้ว'; btn.classList.add('starred');
-    setTimeout(function(){ btn.textContent='☆ สำคัญ'; btn.classList.remove('starred'); }, 1500);
-  }).saveImportant(text, role === 'user' ? 'user' : 'model');
-}
-
-function viewImportant(){
-  google.script.run.withSuccessHandler(function(items){
-    if(!items || items.length===0){ alert('ยังไม่มีเรื่องสำคัญที่บันทึกไว้ครับ'); return; }
-    const lines = items.map(function(it){ return (it.role==='user'?'คุณ':'Jarvis') + ': ' + it.text; });
-    alert('⭐ เรื่องสำคัญที่บันทึกไว้:\n\n' + lines.join('\n\n'));
-  }).loadImportant();
-}
-
-function loadOldHistory(){
-  google.script.run.withSuccessHandler(function(messages){
-    document.getElementById('chat').innerHTML = '';
-    if(!messages || messages.length===0){ addMsg('jarvis','ยังไม่มีประวัติเก่าครับ'); return; }
-    messages.forEach(function(m){ addMsg(m.role === 'model' ? 'jarvis' : 'user', m.text); });
-  }).loadHistory();
-}
-
-function clearScreen(){
-  document.getElementById('chat').innerHTML = '';
-  addMsg('jarvis', 'สวัสดีครับ ผมคือ Jarvis มีอะไรให้ช่วยคิดหรือวางแผนวันนี้ครับ');
-}
-
-function handleImage(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev){
-    const img = new Image();
-    img.onload = function(){
-      const canvas = document.createElement('canvas');
-      const maxSize = 1200;
-      let w = img.width, h = img.height;
-      if(w > h && w > maxSize){ h = h*maxSize/w; w = maxSize; }
-      else if(h > maxSize){ w = w*maxSize/h; h = maxSize; }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      pendingImage = { data: dataUrl.split(',')[1], mimeType: 'image/jpeg' };
-      document.getElementById('previewThumb').src = dataUrl;
-      document.getElementById('imgPreview').style.display = 'flex';
-    };
-    img.src = ev.target.result;
+  const payload = {
+    contents: contents,
+    systemInstruction: { parts: [{ text: JARVIS_PERSONA }] }
   };
-  reader.readAsDataURL(file);
-}
-function clearImage(){
-  pendingImage = null;
-  document.getElementById('imgInput').value = '';
-  document.getElementById('imgPreview').style.display = 'none';
+
+  const json = fetchWithRetry_(url, payload, {});
+  const jarvisReply = json.candidates[0].content.parts[0].text;
+
+  sheet.appendRow([new Date(), userId, 'model', jarvisReply]);
+  return jarvisReply;
 }
 
-function send(){
-  const input = document.getElementById('input');
-  const text = input.value.trim();
-  if(!text) return;
-  input.value = '';
+// ---------- PIPELINE 4 เอเจนต์ (เรียกเมื่อกด "ลงมือทำ" เท่านั้น) ----------
+function executeFromChat(userId) {
+  userId = userId || 'master';
+  const recent = loadHistory(userId).slice(-14);
+  const transcript = recent.map(function (m) {
+    return (m.role === 'model' ? 'Jarvis' : 'ผู้ใช้') + ': ' + m.text;
+  }).join('\n');
+  return runJarvisPipeline(transcript);
+}
 
-  const userDiv = addMsg('user', text);
-  const imgData = pendingImage ? pendingImage.data : null;
-  const imgMime = pendingImage ? pendingImage.mimeType : null;
-  if(pendingImage){
-    const im = document.createElement('img');
-    im.className = 'chat-img'; im.src = 'data:'+imgMime+';base64,'+imgData;
-    userDiv.appendChild(im);
+function runJarvisPipeline(userRequest) {
+  const analysis = analyzeProblem_(userRequest);
+  const plan = planFix_(analysis);
+  const code = writeCode_(plan);
+  const review = reviewCode_(code);
+  return { analysis: analysis, plan: plan, code: code, review: review };
+}
+
+function analyzeProblem_(userRequest) {
+  const prompt =
+    'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ช่วยวิเคราะห์ปัญหาโค้ด อ่านบทสนทนานี้แล้วสรุปสั้นๆ ว่า ' +
+    '1) ผู้ใช้ต้องการอะไรกันแน่ 2) เกี่ยวข้องกับส่วนไหนของโค้ด ' +
+    'ไม่ต้องเขียนโค้ด แค่วิเคราะห์เท่านั้น\n\nบทสนทนา:\n' + userRequest;
+  return callGemini_(prompt, 'gemini-3.5-flash-lite');
+}
+
+function planFix_(analysis) {
+  const prompt =
+    'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ช่วยวางแผนแก้โค้ด จากการวิเคราะห์นี้ ให้วางแผนเป็นข้อๆ ' +
+    'ว่าต้องทำอะไรบ้างเพื่อให้ได้ตามที่ผู้ใช้ต้องการ ไม่ต้องเขียนโค้ดจริง แค่วางแผนขั้นตอน\n\n' +
+    'การวิเคราะห์: ' + analysis;
+  return callGroq_(prompt, 'llama-3.3-70b-versatile');
+}
+
+function writeCode_(plan) {
+  const prompt =
+    'สำคัญ: คอมเมนต์และคำอธิบายทุกจุดในโค้ดต้องเป็นภาษาไทยเท่านั้น ' +
+    '(ชื่อตัวแปร/ฟังก์ชัน/คำสั่งโปรแกรมยังเป็นอังกฤษได้ตามปกติ) ' +
+    'คุณคือโปรแกรมเมอร์ เขียนโค้ดตามแผนนี้ให้ครบถ้วน\n\nแผน: ' + plan;
+  return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free');
+}
+
+function reviewCode_(code) {
+  const prompt =
+    'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ตรวจโค้ด ตรวจโค้ดนี้หาบั๊กหรือจุดที่ควรปรับปรุง ' +
+    'สรุปเป็นข้อๆ สั้นๆ ถ้าโค้ดใช้ได้ดีอยู่แล้วให้ตอบว่า "ผ่าน"\n\nโค้ด: ' + code;
+  return callGemini_(prompt, 'gemini-3.5-flash-lite');
+}
+
+// ---------- PROVIDERS ----------
+function callGemini_(prompt, model) {
+  const key = getKey_('GEMINI_API_KEY');
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + key;
+  const payload = { contents: [{ parts: [{ text: prompt }] }] };
+  const json = fetchWithRetry_(url, payload, {});
+  return json.candidates[0].content.parts[0].text;
+}
+
+function callGroq_(prompt, model) {
+  const key = getKey_('GROQ_API_KEY');
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }] };
+  const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
+  return json.choices[0].message.content;
+}
+
+function callOpenRouter_(prompt, model) {
+  const key = getKey_('OPENROUTER_API_KEY');
+  const url = 'https://openrouter.ai/api/v1/chat/completions';
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }] };
+  const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
+  return json.choices[0].message.content;
+}
+
+function fetchWithRetry_(url, payload, extraHeaders, maxRetries) {
+  maxRetries = maxRetries || 3;
+  const options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    headers: extraHeaders,
+    muteHttpExceptions: true
+  };
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = UrlFetchApp.fetch(url, options);
+    const code = response.getResponseCode();
+    const text = response.getContentText();
+    if (code === 200) return JSON.parse(text);
+    if (code === 429 && attempt < maxRetries) {
+      Utilities.sleep(Math.pow(2, attempt) * 2000);
+      continue;
+    }
+    throw new Error('API error ' + code + ': ' + text);
   }
-  clearImage();
-
-  const ring = document.getElementById('ring');
-  const sendBtn = document.getElementById('sendBtn');
-  ring.classList.add('busy'); sendBtn.disabled = true;
-  const chat = document.getElementById('chat');
-  const typing = document.createElement('div');
-  typing.className = 'typing'; typing.id = 'typing';
-  typing.textContent = 'Jarvis กำลังพิมพ์...';
-  chat.appendChild(typing);
-  chat.scrollTop = chat.scrollHeight;
-
-  google.script.run
-    .withSuccessHandler(function(reply){
-      document.getElementById('typing').remove();
-      ring.classList.remove('busy'); sendBtn.disabled = false;
-      addMsg('jarvis', reply);
-    })
-    .withFailureHandler(function(err){
-      document.getElementById('typing').remove();
-      ring.classList.remove('busy'); sendBtn.disabled = false;
-      addMsg('jarvis', 'เกิดข้อผิดพลาด: ' + err.message);
-    })
-    .chatWithJarvis(text, imgData, imgMime);
 }
-
-function executePipeline(){
-  const ring = document.getElementById('ring');
-  const execBtn = document.getElementById('execBtn');
-  ring.classList.add('busy');
-  execBtn.disabled = true; execBtn.textContent = 'กำลังดำเนินการ 4 ขั้นตอน...';
-  const chat = document.getElementById('chat');
-  const typing = document.createElement('div');
-  typing.className = 'typing'; typing.id = 'typing2';
-  typing.textContent = 'Jarvis กำลังวิเคราะห์ วางแผน เขียนโค้ด ตรวจสอบ...';
-  chat.appendChild(typing); chat.scrollTop = chat.scrollHeight;
-
-  google.script.run
-    .withSuccessHandler(function(result){
-      document.getElementById('typing2').remove();
-      ring.classList.remove('busy'); execBtn.disabled = false; execBtn.textContent = '🚀 ลงมือทำจากบทสนทนานี้';
-      addPipelineCard(result);
-    })
-    .withFailureHandler(function(err){
-      document.getElementById('typing2').remove();
-      ring.classList.remove('busy'); execBtn.disabled = false; execBtn.textContent = '🚀 ลงมือทำจากบทสนทนานี้';
-      addMsg('jarvis', 'เกิดข้อผิดพลาดตอนลงมือทำ: ' + err.message);
-    })
-    .executeFromChat();
-}
-
-function copyText(text, btn){
-  const done = function(){
-    const orig = btn.textContent;
-    btn.textContent = 'COPIED'; btn.classList.add('copied');
-    setTimeout(function(){ btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(done).catch(function(){ fallbackCopy(text, done); });
-  } else { fallbackCopy(text, done); }
-}
-function fallbackCopy(text, cb){
-  const ta = document.createElement('textarea');
-  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
-  document.body.appendChild(ta); ta.focus(); ta.select();
-  try{ document.execCommand('copy'); }catch(e){}
-  document.body.removeChild(ta); cb();
-}
-
-// เปิดหน้ามาแบบสะอาด ไม่โหลดประวัติเก่าอัตโนมัติ (ข้อมูลยังอยู่ กดปุ่ม 📜 ประวัติ เพื่อดึงกลับมาได้)
-addMsg('jarvis', 'สวัสดีครับ ผมคือ Jarvis มีอะไรให้ช่วยคิดหรือวางแผนวันนี้ครับ');
-</script>
-</body>
-</html>
