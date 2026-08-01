@@ -48,7 +48,7 @@ function writeCode_(plan) {
 
 function reviewCode_(code) {
   const prompt = 'คุณคือผู้ตรวจโค้ด ตรวจโค้ดนี้หาบั๊กหรือจุดที่ควรปรับปรุง สรุปเป็นข้อๆ ถ้าดีอยู่แล้วตอบว่า "ผ่าน"\n\nโค้ด: ' + code;
-  return callGemini_(prompt, 'gemini-2.5-flash-lite');
+return callGemini_(prompt, 'gemini-3.5-flash-lite');
 }
 
 function callGemini_(prompt, model) {
