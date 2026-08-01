@@ -1,27 +1,20 @@
 /**
- * J.A.R.V.I.S. — ผู้ช่วยแชท AI ส่วนตัว พร้อมระบบ Persistence Memory (Google Sheets)
- * Architecture: Option B (Save All, Context Light)
+ * J.A.R.V.I.S. — แชท AI ส่วนตัว จำบทสนทนาไว้ใน Google Sheet
+ * (สร้าง Sheet อัตโนมัติครั้งแรกที่รัน ไม่ต้องสร้างเองก่อน)
  */
 
 const JARVIS_PERSONA =
   'คุณคือ Jarvis ผู้ช่วย AI ส่วนตัวของผู้ใช้ พูดจาสุภาพ กระชับ ฉลาด มีมาดนิดๆ แบบ Jarvis ใน Iron Man ' +
-  'หน้าที่หลักคือช่วยคิดและวางแผนเรื่องโค้ดกับผใช้ ผู้ใช้อาจแนบภาพหน้าจอมาให้ดูด้วย ' +
-  'ถ้ามีภาพแนบมา ใหดูภาพประกอบคำถามเสมอ บอกสิ่งที่เห็นในภาพที่เกี่ยวข้องกับปัญหา ' +
-  'สำคัญมาก: อย่ารีบเขียนโค้ดหรือรีบสรุปวิธีแก้ปัญหาทันทีถายังไม่เข้าใจสิ่งที่ผู้ใช้ต้องการชัดเจน ' +
-  'ให้ถามคำถามกลับเพื่อทความเข้าใจก่อนเสมอถ้าข้อมูลยังไม่พอ ' +
+  'หน้าที่หลักคือช่วยคิดและวางแผนเรื่องโค้ดกับผู้ใช้ ผู้ใช้อาจแนบภาพหน้าจอมาให้ดูด้วย ' +
+  'ถ้ามีภาพแนบมา ให้ดูภาพประกอบคำถามเสมอ บอกสิ่งที่เห็นในภาพที่เกี่ยวข้องกับปัญหา ' +
+  'สำคัญมาก: อย่ารีบเขียนโค้ดหรือรีบสรุปวิธีแก้ปัญหาทันทีถ้ายังไม่เข้าใจสิ่งที่ผู้ใช้ต้องการชัดเจน ' +
+  'ให้ถามคำถามกลับเพื่อทำความเข้าใจก่อนเสมอถ้าข้อมูลยังไม่พอ ' +
   'ตอบเป็นภาษาไทยเสมอ (ยกเว้นโค้ด/ชื่อตัวแปรที่ต้องเป็นอังกฤษตามปกติ)';
 
-// ดึงค่าจาก Script Properties
 function getKey_(name) {
   const key = PropertiesService.getScriptProperties().getProperty(name);
   if (!key) throw new Error('Missing Script Property: ' + name);
   return key;
-}
-
-// เชื่อมต่อ Sheet ฐานข้อมูล
-function getDbSheet_() {
-  const sheetId = getKey_('SPREADSHEET_ID');
-  return SpreadsheetApp.openById(sheetId).getActiveSheet();
 }
 
 function doGet() {
@@ -30,75 +23,80 @@ function doGet() {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
-/**
- * ฟังก์ชันหลักในการรับ-ส่งข้อความ
- * บันทึกลง Sheet แต่ส่งเฉพาะ Prompt ปัจจุบันให้ Gemini เพื่อความเร็วและประหยัด Token
- */
-function chatWithJarvis(userText, imageData, imageMimeType, userId = 'master') {
-  const sheet = getDbSheet_();
-
-  // 1. บันทึกข้อความของผู้ใช้ลง Sheet (Database)
-  sheet.appendRow([new Date(), userId, 'user', userText]);
-
-  // 2. เตรียมข้อมูลส่งให้ Gemini (ส่งเฉพาะข้อความล่าสุดตาม Option B)
-  const key = getKey_('GEMINI_API_KEY');
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' + key;
-
-  const userPart = [{ text: userText }];
-  if (imageData) {
-    userPart.push({ inlineData: { mimeType: imageMimeType, data: imageData } });
+// ---------- ฐานข้อมูล (Google Sheet) ----------
+function getDbSheet_() {
+  let ssId = PropertiesService.getScriptProperties().getProperty('DB_SHEET_ID');
+  let spreadsheet;
+  if (ssId) {
+    spreadsheet = SpreadsheetApp.openById(ssId);
+  } else {
+    spreadsheet = SpreadsheetApp.create('Jarvis Chat Log');
+    PropertiesService.getScriptProperties().setProperty('DB_SHEET_ID', spreadsheet.getId());
   }
-
-  const payload = {
-    contents: [
-      {
-        role: 'user',
-        parts: userPart
-      }
-    ],
-    systemInstruction: { parts: [{ text: JARVIS_PERSONA }] }
-  };
-
-  // 3. เรียก API และรับคำตอบ
-  const json = fetchWithRetry_(url, payload, {});
-  const jarvisReply = json.candidates[0].content.parts[0].text;
-
-  // 4. บันทึกคำตอบของ Jarvis ลง Sheet
-  sheet.appendRow([new Date(), userId, 'model', jarvisReply]);
-
-  return jarvisReply;
+  let sheet = spreadsheet.getSheetByName('ChatLog');
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet('ChatLog');
+    sheet.appendRow(['timestamp', 'userId', 'role', 'text']);
+  }
+  return sheet;
 }
 
-/**
- * ฟังก์ชันค้นหาอดีต (เตรียมไว้ใช้ในอนาคต เมื่อต้องการให้ Jarvis ค้นความจำ)
- */
-function searchMemory(keyword, userId = 'master') {
+function loadHistory(userId) {
+  userId = userId || 'master';
   const sheet = getDbSheet_();
-  const lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return [];
-
-  const data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
-  return data.filter(row => row[1] === userId && row[3].toString().includes(keyword));
+  const data = sheet.getDataRange().getValues();
+  const rows = data.slice(1);
+  const messages = [];
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i][1] === userId) messages.push({ role: rows[i][2], text: rows[i][3] });
+  }
+  return messages.slice(-40);
 }
 
-/**
- * ฟังก์ชันลบความทรงจำของผู้ใช้ (สั่งรันจากใน Script หรือทำระบบสั่งลบได้)
- */
-function clearChatHistory(userId = 'master') {
+function clearHistory(userId) {
+  userId = userId || 'master';
   const sheet = getDbSheet_();
-  const lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return true;
-
-  const values = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
-  for (let i = values.length - 1; i >= 0; i--) {
-    if (values[i][1] === userId) {
-      sheet.deleteRow(i + 2);
-    }
+  const data = sheet.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][1] === userId) sheet.deleteRow(i + 1);
   }
   return true;
 }
 
-function fetchWithRetry_(url, payload, extraHeaders, maxRetries = 3) {
+// ---------- แชทหลัก ----------
+function chatWithJarvis(userText, imageData, imageMimeType, userId) {
+  userId = userId || 'master';
+  const sheet = getDbSheet_();
+  sheet.appendRow([new Date(), userId, 'user', userText]);
+
+  const key = getKey_('GEMINI_API_KEY');
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' + key;
+
+  // ส่งบทสนทนาล่าสุด 10 ข้อความให้ Gemini เพื่อให้จำบริบทได้ (ไม่ส่งทั้งหมดเพื่อประหยัด token)
+  const recent = loadHistory(userId).slice(-10);
+  const contents = recent.map(function (m, i) {
+    const isLast = i === recent.length - 1;
+    const parts = [{ text: m.text }];
+    if (isLast && imageData) {
+      parts.push({ inlineData: { mimeType: imageMimeType, data: imageData } });
+    }
+    return { role: m.role === 'model' ? 'model' : 'user', parts: parts };
+  });
+
+  const payload = {
+    contents: contents,
+    systemInstruction: { parts: [{ text: JARVIS_PERSONA }] }
+  };
+
+  const json = fetchWithRetry_(url, payload, {});
+  const jarvisReply = json.candidates[0].content.parts[0].text;
+
+  sheet.appendRow([new Date(), userId, 'model', jarvisReply]);
+  return jarvisReply;
+}
+
+function fetchWithRetry_(url, payload, extraHeaders, maxRetries) {
+  maxRetries = maxRetries || 3;
   const options = {
     method: 'post',
     contentType: 'application/json',
