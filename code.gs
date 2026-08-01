@@ -32,9 +32,13 @@ function testPipeline() {
   Logger.log(JSON.stringify(result, null, 2));
 }
 
-function analyzeProblem_(userRequest) {
-  const prompt = 'คุณคือผู้ช่วยวิเคราะห์ปัญหาโค้ด อ่านคำขอนี้แล้วสรุปสั้นๆ ว่า 1) ปัญหาคืออะไร 2) น่าจะเกี่ยวข้องกับส่วนไหนของโค้ด ไม่ต้องเขียนโค้ด แค่วิเคราะห์เท่านั้น\n\nคำขอ: ' + userRequest;
-return callGemini_(prompt, 'gemini-3.6-flash');
+function analyzeProblem_(userRequest, fileContext) {
+  let prompt =
+    'คุณคือผู้ช่วยวิเคราะห์ปัญหาโค้ด อ่านคำขอนี้แล้วสรุปสั้นๆ ว่า ' +
+    '1) ปัญหาคืออะไร 2) น่าจะเกี่ยวข้องกับส่วนไหนของโค้ด ' +
+    'ไม่ต้องเขียนโค้ด แค่วิเคราะห์เท่านั้น\n\nคำขอ: ' + userRequest;
+  if (fileContext) prompt += '\n\nโค้ดปัจจุบันที่แนบมา:\n' + fileContext;
+  return callGemini_(prompt, 'gemini-3.6-flash');
 }
 
 function planFix_(analysis) {
