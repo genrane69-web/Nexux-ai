@@ -1,15 +1,14 @@
 /**
- * J.A.R.V.I.S. — แชท AI ส่วนตัว จำบทสนทนาไว้ใน Google Sheet
- * (สร้าง Sheet อัตโนมัติครั้งแรกที่รัน ไม่ต้องสร้างเองก่อน)
+ * J.A.R.V.I.S. — แชทวางแผนก่อน + Pipeline 4 เอเจนต์ (กดลงมือทำเมื่อพร้อม) + เก็บเรื่องสำคัญแยกชีท
  */
 
 const JARVIS_PERSONA =
-  'คุณคือ Jarvis ผู้ช่วย AI ส่วนตัวของผู้ใช้ พูดจาสุภาพ กระชับ ฉลาด มีมาดนิดๆ แบบ Jarvis ใน Iron Man ' +
+  'คุณคือ Jarvis ผู้ช่วย AI ส่วนตัวของผใช้ พูดจาสุภาพ กระชับ ฉลาด มีมาดนดๆ แบบ Jarvis ใน Iron Man ' +
   'หน้าที่หลักคือช่วยคิดและวางแผนเรื่องโค้ดกับผู้ใช้ ผู้ใช้อาจแนบภาพหน้าจอมาให้ดูด้วย ' +
-  'ถ้ามีภาพแนบมา ให้ดูภาพประกอบคำถามเสมอ บอกสิ่งที่เห็นในภาพที่เกี่ยวข้องกับปัญหา ' +
-  'สำคัญมาก: อย่ารีบเขียนโค้ดหรือรีบสรุปวิธีแก้ปัญหาทันทีถ้ายังไม่เข้าใจสิ่งที่ผู้ใช้ต้องการชัดเจน ' +
-  'ให้ถามคำถามกลับเพื่อทำความเข้าใจก่อนเสมอถ้าข้อมูลยังไม่พอ ' +
-  'ตอบเป็นภาษาไทยเสมอ (ยกเว้นโค้ด/ชื่อตัวแปรที่ต้องเป็นอังกฤษตามปกติ)';
+  'ถ้ามีภาพแนบมา ให้ดูภาพประกอบคำถามเสมอ บอกสงที่เห็นในภาพที่เกี่ยวข้องกับปัญหา ' +
+  'สำคัญมาก: อย่ารีบเขียนโค้ดหรือรีบสรุปวิธีแก้ปัญหาทันทีถายังไม่เข้าใจสิ่งที่ผู้ใช้ต้องการชดเจน ' +
+  'ให้ถามคำถามกลับเพื่อทำความเข้าใจก่อนเสมอถ้าข้อมูลยังไม่พอ เมื่อเข้าใจชดพอแล้วให้บอกผู้ใช้ว่าพร้อมกดปม "ลงมือทำ" ได้เลย ' +
+  'ตอบเป็นภาษาไทยเสมอ (ยกเว้นโค้ด/ชอตัวแปรที่ต้องเป็นอังกฤษตามปกติ)';
 
 function getKey_(name) {
   const key = PropertiesService.getScriptProperties().getProperty(name);
@@ -23,8 +22,8 @@ function doGet() {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
-// ---------- ฐานข้อมูล (Google Sheet) ----------
-function getDbSheet_() {
+// ---------- ฐานขอมูล (Google Sheet) ----------
+function getSpreadsheet_() {
   let ssId = PropertiesService.getScriptProperties().getProperty('DB_SHEET_ID');
   let spreadsheet;
   if (ssId) {
@@ -33,9 +32,24 @@ function getDbSheet_() {
     spreadsheet = SpreadsheetApp.create('Jarvis Chat Log');
     PropertiesService.getScriptProperties().setProperty('DB_SHEET_ID', spreadsheet.getId());
   }
+  return spreadsheet;
+}
+
+function getDbSheet_() {
+  const spreadsheet = getSpreadsheet_();
   let sheet = spreadsheet.getSheetByName('ChatLog');
   if (!sheet) {
     sheet = spreadsheet.insertSheet('ChatLog');
+    sheet.appendRow(['timestamp', 'userId', 'role', 'text']);
+  }
+  return sheet;
+}
+
+function getImportantSheet_() {
+  const spreadsheet = getSpreadsheet_();
+  let sheet = spreadsheet.getSheetByName('Important');
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet('Important');
     sheet.appendRow(['timestamp', 'userId', 'role', 'text']);
   }
   return sheet;
@@ -53,14 +67,23 @@ function loadHistory(userId) {
   return messages.slice(-40);
 }
 
-function clearHistory(userId) {
+function saveImportant(text, role, userId) {
   userId = userId || 'master';
-  const sheet = getDbSheet_();
-  const data = sheet.getDataRange().getValues();
-  for (let i = data.length - 1; i >= 1; i--) {
-    if (data[i][1] === userId) sheet.deleteRow(i + 1);
-  }
+  const sheet = getImportantSheet_();
+  sheet.appendRow([new Date(), userId, role || 'user', text]);
   return true;
+}
+
+function loadImportant(userId) {
+  userId = userId || 'master';
+  const sheet = getImportantSheet_();
+  const data = sheet.getDataRange().getValues();
+  const rows = data.slice(1);
+  const items = [];
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i][1] === userId) items.push({ role: rows[i][2], text: rows[i][3] });
+  }
+  return items;
 }
 
 // ---------- แชทหลัก ----------
@@ -70,9 +93,8 @@ function chatWithJarvis(userText, imageData, imageMimeType, userId) {
   sheet.appendRow([new Date(), userId, 'user', userText]);
 
   const key = getKey_('GEMINI_API_KEY');
-const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' + key;
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' + key;
 
-  // ส่งบทสนทนาล่าสุด 10 ข้อความให้ Gemini เพื่อให้จำบริบทได้ (ไม่ส่งทั้งหมดเพื่อประหยัด token)
   const recent = loadHistory(userId).slice(-10);
   const contents = recent.map(function (m, i) {
     const isLast = i === recent.length - 1;
@@ -93,6 +115,80 @@ const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-
 
   sheet.appendRow([new Date(), userId, 'model', jarvisReply]);
   return jarvisReply;
+}
+
+// ---------- PIPELINE 4 เอเจนต์ (เรียกเมื่อกด "ลงมือทำ" เท่านั้น) ----------
+function executeFromChat(userId) {
+  userId = userId || 'master';
+  const recent = loadHistory(userId).slice(-14);
+  const transcript = recent.map(function (m) {
+    return (m.role === 'model' ? 'Jarvis' : 'ผู้ใช้') + ': ' + m.text;
+  }).join('\n');
+  return runJarvisPipeline(transcript);
+}
+
+function runJarvisPipeline(userRequest) {
+  const analysis = analyzeProblem_(userRequest);
+  const plan = planFix_(analysis);
+  const code = writeCode_(plan);
+  const review = reviewCode_(code);
+  return { analysis: analysis, plan: plan, code: code, review: review };
+}
+
+function analyzeProblem_(userRequest) {
+  const prompt =
+    'ตอบเป็นภาษาไทยทงหมด คุณคือผู้ช่วยวิเคราะห์ปัญหาโค้ด อานบทสนทนานี้แล้วสรุปสั้นๆ ว่า ' +
+    '1) ผู้ใช้ต้องการอะไรกันแน่ 2) เกี่ยวข้องกับส่วนไหนของโค้ด ' +
+    'ไม่ต้องเขียนโค้ด แค่วเคราะห์เท่านั้น\n\nบทสนทนา:\n' + userRequest;
+  return callGemini_(prompt, 'gemini-3.5-flash-lite');
+}
+
+function planFix_(analysis) {
+  const prompt =
+    'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ช่วยวางแผนแก้โค้ด จากการวิเคราะหนี้ ให้วางแผนเป็นข้อๆ ' +
+    'ว่าตองทำอะไรบ้างเพื่อให้ได้ตามที่ผู้ใช้ต้องการ ไม่ต้องเขียนโค้ดจริง แค่วางแผนขั้นตอน\n\n' +
+    'การวิเคราะห: ' + analysis;
+  return callGroq_(prompt, 'llama-3.3-70b-versatile');
+}
+
+function writeCode_(plan) {
+  const prompt =
+    'สำคัญ: คอมเมนต์และคำอธิบายทุกจุดในโค้ดต้องเป็นภาษาไทยเท่านั้น ' +
+    '(ชื่อตัวแปร/ฟังก์ชัน/คสั่งโปรแกรมยังเป็นอังกฤษได้ตามปกติ) ' +
+    'คุณคือโปรแกรมเมอร์ เขียนโค้ดตามแผนนี้ให้ครบถวน\n\nแผน: ' + plan;
+  return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free');
+}
+
+function reviewCode_(code) {
+  const prompt =
+    'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ตรวจโค้ด ตรวจโค้ดนี้หาบั๊กหรือจดที่ควรปรับปรุง ' +
+    'สรุปเป็นข้อๆ สั้นๆ ถ้าโค้ดใช้ได้ดีอยู่แล้วให้ตอบว่า "ผ่าน"\n\nโค้ด: ' + code;
+  return callGemini_(prompt, 'gemini-3.5-flash-lite');
+}
+
+// ---------- PROVIDERS ----------
+function callGemini_(prompt, model) {
+  const key = getKey_('GEMINI_API_KEY');
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + key;
+  const payload = { contents: [{ parts: [{ text: prompt }] }] };
+  const json = fetchWithRetry_(url, payload, {});
+  return json.candidates[0].content.parts[0].text;
+}
+
+function callGroq_(prompt, model) {
+  const key = getKey_('GROQ_API_KEY');
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }] };
+  const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
+  return json.choices[0].message.content;
+}
+
+function callOpenRouter_(prompt, model) {
+  const key = getKey_('OPENROUTER_API_KEY');
+  const url = 'https://openrouter.ai/api/v1/chat/completions';
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }] };
+  const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
+  return json.choices[0].message.content;
 }
 
 function fetchWithRetry_(url, payload, extraHeaders, maxRetries) {
