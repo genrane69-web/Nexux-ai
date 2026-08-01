@@ -46,9 +46,12 @@ function planFix_(analysis) {
   return callGroq_(prompt, 'llama-3.3-70b-versatile');
 }
 
-function writeCode_(plan) {
-  const prompt = 'คุณคือโปรแกรมเมอร์ เขียนโค้ดตามแผนนี้ให้ครบถ้วน ใส่คอมเมนต์อธิบายสั้นๆ\n\nแผน: ' + plan;
-return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free');
+function writeCode_(plan, fileContext) {
+  let prompt =
+    'คุณคือโปรแกรมเมอร์ เขียนโค้ดตามแผนนี้ให้ครบถ้วน ใส่คอมเมนต์อธิบายสั้นๆ\n\n' +
+    'แผน: ' + plan;
+  if (fileContext) prompt += '\n\nแก้ไขจากโค้ดเดิมนี้ (แก้เฉพาะจุดที่จำเป็น อย่าเขียนใหม่หมดถ้าไม่ต้อง):\n' + fileContext;
+  return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free');
 }
 
 function reviewCode_(code) {
