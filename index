@@ -2,7 +2,6 @@
 <html>
 <head>
   <base target="_top">
-  <!-- นำเข้าฟอนต์ภาษาไทยและไอคอน -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   
@@ -16,6 +15,8 @@
       --accent-expert: #7ee787;
       --accent-expert-glow: rgba(126, 231, 135, 0.4);
       --accent-magenta: #f778ba;
+      --accent-purple: #a371f7;
+      --accent-purple-glow: rgba(163, 113, 247, 0.4);
       --border-color: #30363d;
     }
 
@@ -36,7 +37,7 @@
       background-color: var(--core-bg);
       backdrop-filter: blur(12px);
       width: 100%;
-      max-width: 480px;
+      max-width: 500px;
       padding: 30px;
       border-radius: 20px;
       border: 1px solid var(--border-color);
@@ -59,7 +60,6 @@
       letter-spacing: 2px;
     }
 
-    /* กล่องแสดงสถานะผู้เชี่ยวชาญ */
     .expert-status-card {
       background: rgba(0, 0, 0, 0.4);
       border: 1px solid var(--accent-expert);
@@ -75,7 +75,7 @@
       font-size: 0.95rem;
     }
 
-    .input-group { margin-bottom: 18px; }
+    .input-group { margin-bottom: 15px; }
     label { display: block; margin-bottom: 8px; color: #8b949e; font-size: 0.9rem; }
 
     input, textarea {
@@ -97,7 +97,6 @@
       box-shadow: 0 0 10px var(--accent-cyan-glow);
     }
 
-    /* ปุ่มกด */
     .btn {
       width: 100%;
       padding: 12px;
@@ -108,7 +107,7 @@
       font-family: 'Prompt', sans-serif;
       font-size: 0.95rem;
       transition: all 0.3s ease;
-      margin-top: 5px;
+      margin-top: 6px;
     }
 
     .btn-set-expert {
@@ -117,7 +116,6 @@
       color: var(--accent-expert);
       padding: 8px 12px;
       font-size: 0.85rem;
-      margin-top: 8px;
     }
 
     .btn-set-expert:hover {
@@ -125,21 +123,34 @@
       color: #000;
     }
 
+    /* ปุ่มสั่งงาน AI หลัก (สีม่วงเด่น) */
+    .btn-ai-cmd {
+      background-color: var(--accent-purple);
+      color: #ffffff;
+      font-size: 1rem;
+      box-shadow: 0 0 15px var(--accent-purple-glow);
+    }
+
+    .btn-ai-cmd:hover {
+      background-color: #b388ff;
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px var(--accent-purple-glow);
+    }
+
     .btn-search {
       background-color: transparent;
-      border: 2px solid var(--accent-cyan);
+      border: 1px solid var(--accent-cyan);
       color: var(--accent-cyan);
     }
 
     .btn-search:hover {
       background-color: var(--accent-cyan);
       color: #000;
-      box-shadow: 0 0 15px var(--accent-cyan-glow);
     }
 
     .btn-save {
       background-color: transparent;
-      border: 2px solid var(--accent-magenta);
+      border: 1px solid var(--accent-magenta);
       color: var(--accent-magenta);
     }
 
@@ -156,14 +167,11 @@
       border: 1px solid var(--border-color);
       font-size: 0.9rem;
       color: var(--accent-magenta);
-      word-break: break-word;
     }
 
-    /* ================================================================== */
-    /* 🚀 สไตล์หน้าต่างป๊อปอัพ (POPUP MODAL STYLES)                       */
-    /* ================================================================== */
+    /* สไตล์ป๊อปอัพ */
     .modal-overlay {
-      display: none; /* ซ่อนไว้เป็นค่าเริ่มต้น */
+      display: none;
       position: fixed;
       top: 0;
       left: 0;
@@ -180,19 +188,18 @@
 
     .modal-content {
       background: #161b22;
-      border: 1px solid var(--accent-cyan);
-      box-shadow: 0 0 35px var(--accent-cyan-glow);
+      border: 1px solid var(--accent-purple);
+      box-shadow: 0 0 35px var(--accent-purple-glow);
       border-radius: 16px;
       width: 100%;
-      max-width: 450px;
+      max-width: 500px;
       padding: 25px;
       box-sizing: border-box;
-      position: relative;
       animation: popupAnim 0.3s ease-out forwards;
     }
 
     @keyframes popupAnim {
-      0% { transform: scale(0.7); opacity: 0; }
+      0% { transform: scale(0.8); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
     }
 
@@ -207,7 +214,7 @@
 
     .modal-header h3 {
       margin: 0;
-      color: var(--accent-cyan);
+      color: var(--accent-purple);
       font-size: 1.2rem;
       font-family: 'Orbitron', 'Prompt', sans-serif;
     }
@@ -216,12 +223,9 @@
       color: #8b949e;
       font-size: 1.5rem;
       cursor: pointer;
-      transition: color 0.2s;
     }
 
-    .close-icon:hover {
-      color: #fff;
-    }
+    .close-icon:hover { color: #fff; }
 
     .modal-body {
       font-size: 0.95rem;
@@ -229,32 +233,22 @@
       margin-bottom: 20px;
     }
 
-    .modal-body a {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 10px 18px;
-      background: var(--accent-cyan);
-      color: #000;
-      font-weight: 600;
-      text-decoration: none;
+    .code-box {
+      background: #0d1117;
+      border: 1px solid var(--border-color);
+      padding: 12px;
       border-radius: 8px;
-      box-shadow: 0 0 10px var(--accent-cyan-glow);
-      transition: all 0.3s;
-    }
-
-    .modal-body a:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 18px var(--accent-cyan);
+      font-family: monospace;
+      color: var(--accent-expert);
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 10px;
     }
 
     .btn-close-modal {
       background: rgba(255,255,255,0.05);
       border: 1px solid var(--border-color);
       color: var(--text-color);
-    }
-
-    .btn-close-modal:hover {
-      background: rgba(255,255,255,0.15);
     }
   </style>
 </head>
@@ -263,7 +257,7 @@
 <div class="assistant-core">
   <div class="core-header">
     <h1>NEXUS CORE AI</h1>
-    <div style="font-size: 0.85rem; color: #8b949e; margin-top: 5px;">ศูนย์กลางผู้ช่วยอัจฉริยะเอนกประสงค์</div>
+    <div style="font-size: 0.85rem; color: #8b949e; margin-top: 5px;">ศูนย์กลางสั่งงานผู้ช่วยอัจฉริยะ</div>
   </div>
 
   <!-- สถานะผู้เชี่ยวชาญปัจจุบัน -->
@@ -273,10 +267,10 @@
     <span id="currentExpertLabel" class="status-badge">ผู้เชี่ยวชาญทั่วไป</span>
   </div>
 
-  <!-- เปลี่ยนโหมดผู้เชี่ยวชาญ -->
+  <!-- ตั้งค่าโหมด AI -->
   <div class="input-group">
-    <label><i class="fas fa-sliders-h"></i> สั่งเปลี่ยนความเชี่ยวชาญเฉพาะทาง:</label>
-    <input type="text" id="expertInput" placeholder="พิมพ์สายงาน เช่น เขียนโค้ด, การเงิน, การตลาด, กฎหมาย...">
+    <label><i class="fas fa-sliders-h"></i> กำหนดหน้าที่ AI (เช่น เขียนโค้ด HTML, นักบัญชี, กฎหมาย):</label>
+    <input type="text" id="expertInput" placeholder="พิมพ์เช่น: โปรแกรมเมอร์ภาษา HTML/JavaScript">
     <button class="btn btn-set-expert" onclick="changeExpertMode()">
       <i class="fas fa-sync-alt"></i> ยืนยันเปลี่ยนโหมดผู้เชี่ยวชาญ
     </button>
@@ -284,38 +278,43 @@
 
   <hr style="margin: 20px 0; border: 0; border-top: 1px solid #30363d;">
 
-  <!-- ช่องพิมพ์สั่งงาน/ค้นหา -->
+  <!-- กล่องพิมพ์สั่งงาน AI -->
   <div class="input-group">
-    <label><i class="fas fa-terminal"></i> พิมพ์คำสั่ง / เรื่องที่ต้องการให้ค้นหา:</label>
-    <textarea id="taskInput" rows="3" placeholder="พิมพ์เรื่องที่อยากรู้ เช่น แก้ไขโค้ดนี้ยังไง, วิเคราะห์เทรนด์ตลาด..."></textarea>
+    <label><i class="fas fa-terminal"></i> พิมพ์คำสั่งงานที่ต้องการให้ AI ทำงาน:</label>
+    <textarea id="taskInput" rows="3" placeholder="พิมพ์สั่งงาน เช่น: ช่วยเขียนโค้ดปุ่มกดสีฟ้าเด้งแจ้งเตือน, คำนวณภาษี..."></textarea>
   </div>
   
-  <button class="btn btn-search" onclick="runSearch()"><i class="fas fa-search"></i> ค้นหาข้อมูลเชิงลึกผ่าน Google</button>
+  <!-- 🚀 ปุ่มกดสั่งงานหลัก -->
+  <button class="btn btn-ai-cmd" onclick="runAiCommand()">
+    <i class="fas fa-robot"></i> ⚡ สั่งงาน AI (เด้งหน้าต่างผลลัพธ์)
+  </button>
+  
+  <button class="btn btn-search" onclick="runSearch()">
+    <i class="fas fa-search"></i> ค้นหาลิงก์ Google เชิงลึก
+  </button>
 
   <hr style="margin: 20px 0; border: 0; border-top: 1px solid #30363d;">
 
-  <!-- ช่องบันทึกความจำ -->
+  <!-- บันทึกลง Sheets -->
   <div class="input-group">
-    <label><i class="fas fa-sticky-note"></i> โน้ตบันทึกความจำเพิ่มเติม:</label>
-    <input type="text" id="noteInput" placeholder="สรุปสั้นๆ หรือจดจำรายละเอียดเพิ่มเติม...">
+    <label><i class="fas fa-sticky-note"></i> บันทึกโน้ตจำเพิ่มเติม:</label>
+    <input type="text" id="noteInput" placeholder="สรุปสั้นๆ เพิ่มเติม...">
   </div>
   
-  <button class="btn btn-save" onclick="runSave()"><i class="fas fa-brain"></i> บันทึกลงหน่วยความจำ (Google Sheets)</button>
+  <button class="btn btn-save" onclick="runSave()"><i class="fas fa-brain"></i> บันทึกลงหน่วยความจำ (Sheets)</button>
   
   <div id="saveStatus" style="display: none;"></div>
 </div>
 
-<!-- ================================================================== -->
-<!-- 🚀 หน้าต่างป๊อปอัพ (POPUP MODAL)                                   -->
-<!-- ================================================================== -->
-<div id="searchModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+<!-- 🚀 หน้าต่างป๊อปอัพ (POPUP MODAL) -->
+<div id="resultModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
   <div class="modal-content">
     <div class="modal-header">
-      <h3><i class="fas fa-satellite-dish"></i> ผลการวิเคราะห์ AI</h3>
+      <h3 id="modalTitle"><i class="fas fa-microchip"></i> ผลลัพธ์คำสั่งงาน</h3>
       <span class="close-icon" onclick="closeModal()">&times;</span>
     </div>
     <div class="modal-body" id="modalBody">
-      <!-- ข้อมูลค้นหาจะถูกฉีดใส่ตรงนี้ -->
+      <!-- ผลลัพธ์จะเด้งตรงนี้ -->
     </div>
     <div style="text-align: right;">
       <button class="btn btn-close-modal" onclick="closeModal()">ปิดหน้าต่าง</button>
@@ -326,78 +325,90 @@
 <script>
   var activeExpertRole = "ผู้เชี่ยวชาญทั่วไป";
 
-  // 1. ฟังก์ชันเปลี่ยนโหมดผู้เชี่ยวชาญ
   function changeExpertMode() {
     var newRole = document.getElementById('expertInput').value.trim();
-    if(!newRole) { 
-      alert("กรุณาพิมพ์ระบุสายงานที่ต้องการให้ AI เป็นผู้เชี่ยวชาญครับ"); 
-      return; 
-    }
+    if(!newRole) { alert("กรุณาพิมพ์ระบุสายงานก่อนครับ"); return; }
     
     activeExpertRole = newRole;
     document.getElementById('currentExpertLabel').innerText = "ผู้เชี่ยวชาญด้าน: " + activeExpertRole;
     document.getElementById('expertInput').value = "";
-    alert("เปลี่ยนโหมดเป็นผู้เชี่ยวชาญด้าน [" + activeExpertRole + "] เรียบร้อยแล้ว!");
+    alert("ตั้งค่าโหมดเป็น [" + activeExpertRole + "] เรียบร้อย!");
   }
 
-  // 2. ฟังก์ชันเปิดหน้าต่างป๊อปอัพค้นหา
-  function runSearch() {
+  // 1. ปุ่มสั่งงาน AI (ส่งคำสั่งให้ AI ทำงานแล้วเด้งป๊อปอัพ)
+  function runAiCommand() {
     var task = document.getElementById('taskInput').value.trim();
-    if(!task) { alert("กรุณาพิมพ์เรื่องที่ต้องการค้นหาก่อนครับ"); return; }
-    
-    // แสดงป๊อปอัพทันทีพร้อมสถานะกำลังโหลด
+    if(!task) { alert("กรุณาพิมพ์คำสั่งงานก่อนกดปุ่มครับ"); return; }
+
+    document.getElementById('modalTitle').innerHTML = `<i class="fas fa-robot"></i> AI รับคำสั่งงาน`;
     document.getElementById('modalBody').innerHTML = `
       <div style="text-align: center; padding: 20px 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-cyan);"></i>
-        <p style="margin-top: 15px; color: #8b949e;">AI ในโหมด <b>[${activeExpertRole}]</b> กำลังประมวลผลข้อมูล...</p>
+        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-purple);"></i>
+        <p style="margin-top: 15px; color: #8b949e;">กำลังประมวลผลคำสั่งงานในโหมด <b>[${activeExpertRole}]</b>...</p>
       </div>
     `;
     openModal();
 
-    // ส่งเรื่องที่สั่งไปหาหลังบ้าน (Code.gs)
     google.script.run
-      .withSuccessHandler(function(response) {
-        if(response.success) {
+      .withSuccessHandler(function(res) {
+        if(res.success) {
           document.getElementById('modalBody').innerHTML = `
-            <p><b><i class="fas fa-user-ninja" style="color: var(--accent-expert);"></i> วิเคราะห์โดย:</b> ${response.expertRole}</p>
-            <p><b><i class="fas fa-file-alt"></i> หัวข้อเรื่อง:</b> ${response.task}</p>
+            <p><b><i class="fas fa-user-ninja" style="color: var(--accent-expert);"></i> ผู้ทำหน้าที่:</b> ${res.expertRole}</p>
+            <p><b><i class="fas fa-paper-plane"></i> คำสั่งที่คุณสั่ง:</b> ${res.task}</p>
             <hr style="border: 0; border-top: 1px solid #30363d; margin: 15px 0;">
-            <p>ระบบเตรียมลิงก์ค้นหาเชิงลึกจาก Google เรียบร้อยแล้ว:</p>
+            <p><b><i class="fas fa-check-circle" style="color: var(--accent-expert);"></i> สถานะระบบ:</b> ${res.status}</p>
+            <div class="code-box">ระบบได้รับคำสั่งเรียบร้อยแล้ว! พร้อมนำคำสั่งนี้ไปใช้ประมวลผลต่อตามที่คุณต้องการ</div>
+          `;
+        } else {
+          document.getElementById('modalBody').innerHTML = `<p style="color: #ff7b72;">❌ ${res.message}</p>`;
+        }
+      })
+      .processAiCommand(task, activeExpertRole);
+  }
+
+  // 2. ปุ่มค้นหา Google
+  function runSearch() {
+    var task = document.getElementById('taskInput').value.trim();
+    if(!task) { alert("กรุณาพิมพ์เรื่องที่ต้องการค้นหาก่อนครับ"); return; }
+    
+    document.getElementById('modalTitle').innerHTML = `<i class="fas fa-search"></i> ค้นหาข้อมูล Google`;
+    document.getElementById('modalBody').innerHTML = `
+      <div style="text-align: center; padding: 20px 0;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-cyan);"></i>
+        <p style="margin-top: 15px; color: #8b949e;">กำลังสร้างลิงก์ค้นหา Google...</p>
+      </div>
+    `;
+    openModal();
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if(res.success) {
+          document.getElementById('modalBody').innerHTML = `
+            <p><b><i class="fas fa-user-ninja" style="color: var(--accent-expert);"></i> ค้นหาในโหมด:</b> ${res.expertRole}</p>
+            <p><b><i class="fas fa-file-alt"></i> หัวข้อเรื่อง:</b> ${res.task}</p>
+            <hr style="border: 0; border-top: 1px solid #30363d; margin: 15px 0;">
             <div style="text-align: center; margin-top: 15px;">
-              <a href="${response.googleLink}" target="_blank">
+              <a href="${res.googleLink}" target="_blank" style="display: inline-block; padding: 10px 18px; background: var(--accent-cyan); color: #000; font-weight: 600; text-decoration: none; border-radius: 8px;">
                 <i class="fas fa-external-link-alt"></i> เปิดดูผลการค้นหาบน Google
               </a>
             </div>
           `;
         } else {
-          document.getElementById('modalBody').innerHTML = `<p style="color: #ff7b72;">❌ ${response.message}</p>`;
+          document.getElementById('modalBody').innerHTML = `<p style="color: #ff7b72;">❌ ${res.message}</p>`;
         }
       })
       .searchData(task, activeExpertRole);
   }
 
-  // 3. ฟังก์ชันเปิด/ปิด ป๊อปอัพ
-  function openModal() {
-    document.getElementById('searchModal').style.display = 'flex';
-  }
+  function openModal() { document.getElementById('resultModal').style.display = 'flex'; }
+  function closeModal() { document.getElementById('resultModal').style.display = 'none'; }
+  function closeModalOnOverlay(e) { if (e.target.id === 'resultModal') closeModal(); }
 
-  function closeModal() {
-    document.getElementById('searchModal').style.display = 'none';
-  }
-
-  // คลิกพื้นที่สีดำด้านนอกเพื่อปิดป๊อปอัพ
-  function closeModalOnOverlay(event) {
-    if (event.target.id === 'searchModal') {
-      closeModal();
-    }
-  }
-
-  // 4. ฟังก์ชันบันทึกลง Sheets
+  // 3. ปุ่มบันทึก Sheets
   function runSave() {
     var task = document.getElementById('taskInput').value.trim();
     var note = document.getElementById('noteInput').value.trim();
-    
-    if(!task) { alert("กรุณาพิมพ์หัวข้อเรื่องก่อนทำการบันทึกครับ"); return; }
+    if(!task) { alert("กรุณาพิมพ์เรื่องก่อนบันทึกครับ"); return; }
     
     var statusDiv = document.getElementById('saveStatus');
     statusDiv.style.display = 'block';
