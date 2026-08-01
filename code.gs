@@ -33,7 +33,7 @@ function testPipeline() {
 
 function analyzeProblem_(userRequest) {
   const prompt = 'คุณคือผู้ช่วยวิเคราะห์ปัญหาโค้ด อ่านคำขอนี้แล้วสรุปสั้นๆ ว่า 1) ปัญหาคืออะไร 2) น่าจะเกี่ยวข้องกับส่วนไหนของโค้ด ไม่ต้องเขียนโค้ด แค่วิเคราะห์เท่านั้น\n\nคำขอ: ' + userRequest;
-  return callGemini_(prompt, 'gemini-2.5-flash');
+return callGemini_(prompt, 'gemini-3.6-flash');
 }
 
 function planFix_(analysis) {
