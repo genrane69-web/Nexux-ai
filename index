@@ -2,6 +2,9 @@
 <html>
 <head>
 <base target="_top">
+<!-- เพิ่ม Tag นี้เพื่อให้เบราว์เซอร์มือถือปรับขนาดหน้าจอหนีคีย์บอร์ดอัตโนมัติ -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -10,10 +13,18 @@
     --cyan:#5ee7ff; --cyan-dim:#274652; --text:#dce8ee; --text-dim:#5c7282; --ok:#5eff9d;
   }
   *{box-sizing:border-box;}
-  html,body{height:100%;margin:0;}
+  
+  /* แก้ไข dynamic height เพื่อรองรับคีย์บอร์ดมือถือ */
+  html, body{
+    height: 100%;
+    height: 100dvh;
+    margin: 0;
+    overflow: hidden;
+  }
   body{
     background:var(--bg); color:var(--text); font-family:'JetBrains Mono',monospace;
-    display:flex; flex-direction:column; height:100vh;
+    display:flex; flex-direction:column; 
+    height: 100%;
     background-image:radial-gradient(circle at 50% 0%, #0d1a24 0%, #070b10 60%);
   }
   .header{display:flex; align-items:center; gap:12px; padding:16px; border-bottom:1px solid var(--border); flex:0 0 auto;}
@@ -42,7 +53,16 @@
 
   .input-row{display:flex; gap:8px; padding:12px; border-top:1px solid var(--border); flex:0 0 auto;}
   .attach-img-btn{background:none; border:1px solid var(--cyan-dim); color:var(--cyan); border-radius:8px; padding:0 12px; font-size:16px; flex:0 0 auto;}
-  textarea{flex:1; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:10px; font-family:inherit; font-size:14px; resize:none; max-height:100px;}
+  
+  /* แก้ไข textarea ให้รองรับการกดวาง (Paste) และป้องกันซูม */
+  textarea{
+    flex:1; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:10px; font-family:inherit; 
+    font-size:16px; /* 16px ช่วยป้องกันหน้าจอซูมบน iOS */
+    resize:none; max-height:100px;
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default !important;
+  }
   textarea:focus{outline:none; border-color:var(--cyan);}
   .send-btn{background:transparent; border:1px solid var(--cyan); color:var(--cyan); border-radius:8px; padding:0 16px; font-family:'Orbitron',sans-serif; font-size:12px;}
   .send-btn:disabled{border-color:var(--text-dim); color:var(--text-dim);}
