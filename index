@@ -1,117 +1,416 @@
-/**
- * ====================================================================
- * 🚀 NEXUS CORE AI - Backend Script (Code.gs)
- * ====================================================================
- * ไฟล์หลังบ้านสำหรับบริหารจัดการ Web App, ค้นหาข้อมูล และเชื่อมต่อหน่วยความจำ Google Sheets
- */
-
-// --------------------------------------------------------------------
-// 1. ฟังก์ชันเปิดหน้าเว็บแอป (Web App Handler)
-// --------------------------------------------------------------------
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index')
-      .setTitle('Nexus Core AI - ศูนย์กลางผู้ช่วยอัจฉริยะ')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
-}
-
-// --------------------------------------------------------------------
-// 2. ฟังก์ชันค้นหาหรือสร้างฐานข้อมูล Google Sheets อัตโนมัติ
-// --------------------------------------------------------------------
-function getOrCreateMemorySheet() {
-  var fileName = "Nexus_Core_Memory_DB"; // ชื่อไฟล์ Google Sheets ที่ใช้เก็บความจำ
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <!-- นำเข้าฟอนต์ภาษาไทยและไอคอน -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   
-  try {
-    // ค้นหาไฟล์ใน Google Drive
-    var files = DriveApp.getFilesByName(fileName);
-    
-    if (files.hasNext()) {
-      // กรณี 1: พบไฟล์เดิมอยู่แล้ว ให้เปิดใช้งานแผ่นงานแรกทันที
-      var existingFile = files.next();
-      return SpreadsheetApp.open(existingFile).getActiveSheet();
-    } else {
-      // กรณี 2: ยังไม่มีไฟล์ ให้สร้าง Google Sheets ใหม่ขึ้นมาบน Google Drive
-      var newSpreadsheet = SpreadsheetApp.create(fileName);
-      var sheet = newSpreadsheet.getActiveSheet();
-      
-      // กำหนดหัวตาราง (Headers)
-      var headers = ["วัน-เวลาที่บันทึก", "โหมดผู้เชี่ยวชาญ", "เรื่อง/คำสั่ง", "โน้ตบันทึกเพิ่มเติม"];
-      sheet.appendRow(headers);
-      
-      // ตกแต่งหัวตารางให้อ่านง่าย (ตัวหนา / พื้นหลังสีเข้ม / ข้อความสีขาว)
-      var headerRange = sheet.getRange(1, 1, 1, headers.length);
-      headerRange.setFontWeight("bold")
-                 .setBackground("#1f2937")
-                 .setFontColor("#ffffff");
-                 
-      // ตรึงแถวหัวตารางไว้ไม่ให้เลื่อนหาย
-      sheet.setFrozenRows(1);
-      
-      return sheet;
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --core-bg: rgba(22, 27, 34, 0.85);
+      --text-color: #c9d1d9;
+      --accent-cyan: #58a6ff;
+      --accent-cyan-glow: rgba(88, 166, 255, 0.4);
+      --accent-expert: #7ee787;
+      --accent-expert-glow: rgba(126, 231, 135, 0.4);
+      --accent-magenta: #f778ba;
+      --border-color: #30363d;
     }
-  } catch (error) {
-    throw new Error("ไม่สามารถเข้าถึงหรือสร้าง Google Sheets ได้: " + error.message);
+
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+
+    .assistant-core {
+      background-color: var(--core-bg);
+      backdrop-filter: blur(12px);
+      width: 100%;
+      max-width: 480px;
+      padding: 30px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+      box-sizing: border-box;
+    }
+
+    .core-header {
+      text-align: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
+    }
+
+    .core-header h1 {
+      font-family: 'Orbitron', 'Prompt', sans-serif;
+      color: var(--accent-cyan);
+      font-size: 1.8rem;
+      margin: 0;
+      letter-spacing: 2px;
+    }
+
+    /* กล่องแสดงสถานะผู้เชี่ยวชาญ */
+    .expert-status-card {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--accent-expert);
+      padding: 12px 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px var(--accent-expert-glow);
+    }
+
+    .status-badge {
+      color: var(--accent-expert);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .input-group { margin-bottom: 18px; }
+    label { display: block; margin-bottom: 8px; color: #8b949e; font-size: 0.9rem; }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      background-color: rgba(13, 17, 23, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-color);
+      font-family: 'Prompt', sans-serif;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      transition: all 0.3s;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-cyan-glow);
+    }
+
+    /* ปุ่มกด */
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: 'Prompt', sans-serif;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      margin-top: 5px;
+    }
+
+    .btn-set-expert {
+      background: transparent;
+      border: 1px solid var(--accent-expert);
+      color: var(--accent-expert);
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    .btn-set-expert:hover {
+      background: var(--accent-expert);
+      color: #000;
+    }
+
+    .btn-search {
+      background-color: transparent;
+      border: 2px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    .btn-search:hover {
+      background-color: var(--accent-cyan);
+      color: #000;
+      box-shadow: 0 0 15px var(--accent-cyan-glow);
+    }
+
+    .btn-save {
+      background-color: transparent;
+      border: 2px solid var(--accent-magenta);
+      color: var(--accent-magenta);
+    }
+
+    .btn-save:hover {
+      background-color: var(--accent-magenta);
+      color: #000;
+    }
+
+    #saveStatus {
+      margin-top: 15px;
+      padding: 12px;
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      font-size: 0.9rem;
+      color: var(--accent-magenta);
+      word-break: break-word;
+    }
+
+    /* ================================================================== */
+    /* 🚀 สไตล์หน้าต่างป๊อปอัพ (POPUP MODAL STYLES)                       */
+    /* ================================================================== */
+    .modal-overlay {
+      display: none; /* ซ่อนไว้เป็นค่าเริ่มต้น */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .modal-content {
+      background: #161b22;
+      border: 1px solid var(--accent-cyan);
+      box-shadow: 0 0 35px var(--accent-cyan-glow);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 450px;
+      padding: 25px;
+      box-sizing: border-box;
+      position: relative;
+      animation: popupAnim 0.3s ease-out forwards;
+    }
+
+    @keyframes popupAnim {
+      0% { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+      margin-bottom: 15px;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      color: var(--accent-cyan);
+      font-size: 1.2rem;
+      font-family: 'Orbitron', 'Prompt', sans-serif;
+    }
+
+    .close-icon {
+      color: #8b949e;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .close-icon:hover {
+      color: #fff;
+    }
+
+    .modal-body {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .modal-body a {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 18px;
+      background: var(--accent-cyan);
+      color: #000;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 8px;
+      box-shadow: 0 0 10px var(--accent-cyan-glow);
+      transition: all 0.3s;
+    }
+
+    .modal-body a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 18px var(--accent-cyan);
+    }
+
+    .btn-close-modal {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+
+    .btn-close-modal:hover {
+      background: rgba(255,255,255,0.15);
+    }
+  </style>
+</head>
+<body>
+
+<div class="assistant-core">
+  <div class="core-header">
+    <h1>NEXUS CORE AI</h1>
+    <div style="font-size: 0.85rem; color: #8b949e; margin-top: 5px;">ศูนย์กลางผู้ช่วยอัจฉริยะเอนกประสงค์</div>
+  </div>
+
+  <!-- สถานะผู้เชี่ยวชาญปัจจุบัน -->
+  <div class="expert-status-card">
+    <i class="fas fa-user-ninja" style="color: var(--accent-expert);"></i> 
+    <span>โหมดปัจจุบัน:</span> 
+    <span id="currentExpertLabel" class="status-badge">ผู้เชี่ยวชาญทั่วไป</span>
+  </div>
+
+  <!-- เปลี่ยนโหมดผู้เชี่ยวชาญ -->
+  <div class="input-group">
+    <label><i class="fas fa-sliders-h"></i> สั่งเปลี่ยนความเชี่ยวชาญเฉพาะทาง:</label>
+    <input type="text" id="expertInput" placeholder="พิมพ์สายงาน เช่น เขียนโค้ด, การเงิน, การตลาด, กฎหมาย...">
+    <button class="btn btn-set-expert" onclick="changeExpertMode()">
+      <i class="fas fa-sync-alt"></i> ยืนยันเปลี่ยนโหมดผู้เชี่ยวชาญ
+    </button>
+  </div>
+
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #30363d;">
+
+  <!-- ช่องพิมพ์สั่งงาน/ค้นหา -->
+  <div class="input-group">
+    <label><i class="fas fa-terminal"></i> พิมพ์คำสั่ง / เรื่องที่ต้องการให้ค้นหา:</label>
+    <textarea id="taskInput" rows="3" placeholder="พิมพ์เรื่องที่อยากรู้ เช่น แก้ไขโค้ดนี้ยังไง, วิเคราะห์เทรนด์ตลาด..."></textarea>
+  </div>
+  
+  <button class="btn btn-search" onclick="runSearch()"><i class="fas fa-search"></i> ค้นหาข้อมูลเชิงลึกผ่าน Google</button>
+
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #30363d;">
+
+  <!-- ช่องบันทึกความจำ -->
+  <div class="input-group">
+    <label><i class="fas fa-sticky-note"></i> โน้ตบันทึกความจำเพิ่มเติม:</label>
+    <input type="text" id="noteInput" placeholder="สรุปสั้นๆ หรือจดจำรายละเอียดเพิ่มเติม...">
+  </div>
+  
+  <button class="btn btn-save" onclick="runSave()"><i class="fas fa-brain"></i> บันทึกลงหน่วยความจำ (Google Sheets)</button>
+  
+  <div id="saveStatus" style="display: none;"></div>
+</div>
+
+<!-- ================================================================== -->
+<!-- 🚀 หน้าต่างป๊อปอัพ (POPUP MODAL)                                   -->
+<!-- ================================================================== -->
+<div id="searchModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-satellite-dish"></i> ผลการวิเคราะห์ AI</h3>
+      <span class="close-icon" onclick="closeModal()">&times;</span>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- ข้อมูลค้นหาจะถูกฉีดใส่ตรงนี้ -->
+    </div>
+    <div style="text-align: right;">
+      <button class="btn btn-close-modal" onclick="closeModal()">ปิดหน้าต่าง</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var activeExpertRole = "ผู้เชี่ยวชาญทั่วไป";
+
+  // 1. ฟังก์ชันเปลี่ยนโหมดผู้เชี่ยวชาญ
+  function changeExpertMode() {
+    var newRole = document.getElementById('expertInput').value.trim();
+    if(!newRole) { 
+      alert("กรุณาพิมพ์ระบุสายงานที่ต้องการให้ AI เป็นผู้เชี่ยวชาญครับ"); 
+      return; 
+    }
+    
+    activeExpertRole = newRole;
+    document.getElementById('currentExpertLabel').innerText = "ผู้เชี่ยวชาญด้าน: " + activeExpertRole;
+    document.getElementById('expertInput').value = "";
+    alert("เปลี่ยนโหมดเป็นผู้เชี่ยวชาญด้าน [" + activeExpertRole + "] เรียบร้อยแล้ว!");
   }
-}
 
-// --------------------------------------------------------------------
-// 3. ฟังก์ชันค้นหาข้อมูลผ่าน Google (ปรับแต่งตามโหมดผู้เชี่ยวชาญ)
-// --------------------------------------------------------------------
-function searchData(task, expertRole) {
-  try {
-    if (!task) {
-      return { success: false, message: "กรุณาระบุเรื่องที่ต้องการค้นหา" };
-    }
+  // 2. ฟังก์ชันเปิดหน้าต่างป๊อปอัพค้นหา
+  function runSearch() {
+    var task = document.getElementById('taskInput').value.trim();
+    if(!task) { alert("กรุณาพิมพ์เรื่องที่ต้องการค้นหาก่อนครับ"); return; }
     
-    var query = "";
-    var roleName = expertRole || "ผู้เชี่ยวชาญทั่วไป";
+    // แสดงป๊อปอัพทันทีพร้อมสถานะกำลังโหลด
+    document.getElementById('modalBody').innerHTML = `
+      <div style="text-align: center; padding: 20px 0;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-cyan);"></i>
+        <p style="margin-top: 15px; color: #8b949e;">AI ในโหมด <b>[${activeExpertRole}]</b> กำลังประมวลผลข้อมูล...</p>
+      </div>
+    `;
+    openModal();
 
-    // ปรับแต่งคีย์เวิร์ดในการค้นหา Google ตามโหมดผู้เชี่ยวชาญที่ตั้งค่าไว้
-    if (roleName !== "ผู้เชี่ยวชาญทั่วไป") {
-      query = task + " " + roleName + " ข้อมูลเชิงลึก เอกสารอ้างอิง";
-    } else {
-      query = task;
-    }
-
-    // สร้าง URL สำหรับไปค้นหาบน Google
-    var searchUrl = "https://www.google.com/search?q=" + encodeURIComponent(query);
-    
-    return {
-      success: true,
-      task: task,
-      expertRole: roleName,
-      googleLink: searchUrl
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: "เกิดข้อผิดพลาดในการสร้างลิงก์ค้นหา: " + error.message
-    };
+    // ส่งเรื่องที่สั่งไปหาหลังบ้าน (Code.gs)
+    google.script.run
+      .withSuccessHandler(function(response) {
+        if(response.success) {
+          document.getElementById('modalBody').innerHTML = `
+            <p><b><i class="fas fa-user-ninja" style="color: var(--accent-expert);"></i> วิเคราะห์โดย:</b> ${response.expertRole}</p>
+            <p><b><i class="fas fa-file-alt"></i> หัวข้อเรื่อง:</b> ${response.task}</p>
+            <hr style="border: 0; border-top: 1px solid #30363d; margin: 15px 0;">
+            <p>ระบบเตรียมลิงก์ค้นหาเชิงลึกจาก Google เรียบร้อยแล้ว:</p>
+            <div style="text-align: center; margin-top: 15px;">
+              <a href="${response.googleLink}" target="_blank">
+                <i class="fas fa-external-link-alt"></i> เปิดดูผลการค้นหาบน Google
+              </a>
+            </div>
+          `;
+        } else {
+          document.getElementById('modalBody').innerHTML = `<p style="color: #ff7b72;">❌ ${response.message}</p>`;
+        }
+      })
+      .searchData(task, activeExpertRole);
   }
-}
 
-// --------------------------------------------------------------------
-// 4. ฟังก์ชันบันทึกข้อมูลลงใน Google Sheets
-// --------------------------------------------------------------------
-function saveToSheet(task, note, expertRole) {
-  try {
-    if (!task) {
-      return "เกิดข้อผิดพลาด: ไม่พบหัวข้อเรื่องที่จะบันทึก";
-    }
-
-    // ดึงแผ่นงาน (ถ้ายังไม่มีไฟล์ มันจะสร้างไฟล์ให้เองอัตโนมัติ)
-    var sheet = getOrCreateMemorySheet();
-    
-    // ดึงวัน-เวลาปัจจุบันในประเทศไทย (GMT+7)
-    var timeStamp = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
-    var roleName = expertRole || "ผู้เชี่ยวชาญทั่วไป";
-    var noteText = note || "-";
-
-    // เพิ่มแถวข้อมูลใหม่ลงในตาราง
-    sheet.appendRow([timeStamp, roleName, task, noteText]);
-    
-    return "บันทึกความจำในโหมด [" + roleName + "] ลง Google Sheets เรียบร้อยแล้ว!";
-  } catch (error) {
-    return "เกิดข้อผิดพลาดในการบันทึก: " + error.message;
+  // 3. ฟังก์ชันเปิด/ปิด ป๊อปอัพ
+  function openModal() {
+    document.getElementById('searchModal').style.display = 'flex';
   }
-}
+
+  function closeModal() {
+    document.getElementById('searchModal').style.display = 'none';
+  }
+
+  // คลิกพื้นที่สีดำด้านนอกเพื่อปิดป๊อปอัพ
+  function closeModalOnOverlay(event) {
+    if (event.target.id === 'searchModal') {
+      closeModal();
+    }
+  }
+
+  // 4. ฟังก์ชันบันทึกลง Sheets
+  function runSave() {
+    var task = document.getElementById('taskInput').value.trim();
+    var note = document.getElementById('noteInput').value.trim();
+    
+    if(!task) { alert("กรุณาพิมพ์หัวข้อเรื่องก่อนทำการบันทึกครับ"); return; }
+    
+    var statusDiv = document.getElementById('saveStatus');
+    statusDiv.style.display = 'block';
+    statusDiv.innerHTML = "⏳ กำลังบันทึกลงหน่วยความจำ...";
+
+    google.script.run
+      .withSuccessHandler(function(msg) {
+        statusDiv.innerHTML = "✅ " + msg;
+        document.getElementById('noteInput').value = "";
+      })
+      .saveToSheet(task, note, activeExpertRole);
+  }
+</script>
+
+</body>
+</html>
