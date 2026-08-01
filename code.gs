@@ -70,7 +70,7 @@ function chatWithJarvis(userText, imageData, imageMimeType, userId) {
   sheet.appendRow([new Date(), userId, 'user', userText]);
 
   const key = getKey_('GEMINI_API_KEY');
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' + key;
+const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' + key;
 
   // ส่งบทสนทนาล่าสุด 10 ข้อความให้ Gemini เพื่อให้จำบริบทได้ (ไม่ส่งทั้งหมดเพื่อประหยัด token)
   const recent = loadHistory(userId).slice(-10);
