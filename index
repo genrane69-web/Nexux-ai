@@ -42,13 +42,13 @@
   }
   textarea:focus{outline:none; border-color:var(--cyan); box-shadow:0 0 0 3px rgba(94,231,255,.12);}
 
-  button{
+  button.run{
     margin-top:12px; width:100%; padding:14px; background:transparent;
     border:1px solid var(--cyan); color:var(--cyan); font-family:'Orbitron',sans-serif;
     letter-spacing:2px; font-size:13px; border-radius:8px; text-transform:uppercase;
   }
-  button:active{background:rgba(94,231,255,.1);}
-  button:disabled{border-color:var(--text-dim); color:var(--text-dim);}
+  button.run:active{background:rgba(94,231,255,.1);}
+  button.run:disabled{border-color:var(--text-dim); color:var(--text-dim);}
 
   .panel{
     margin-top:16px; background:var(--panel); border:1px solid var(--border);
@@ -61,9 +61,17 @@
     letter-spacing:1.5px; color:var(--text-dim);
   }
   .panel-head b{color:var(--cyan); font-weight:500;}
+  .head-right{display:flex; align-items:center; gap:8px;}
   .status{font-size:10px; padding:2px 8px; border-radius:10px; border:1px solid var(--text-dim);}
   .status.done{color:var(--ok); border-color:var(--ok);}
   .status.err{color:var(--danger); border-color:var(--danger);}
+  .copy-btn{
+    background:transparent; border:1px solid var(--cyan-dim); color:var(--cyan);
+    font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1px;
+    padding:3px 8px; border-radius:10px;
+  }
+  .copy-btn:active{background:rgba(94,231,255,.15);}
+  .copy-btn.copied{color:var(--ok); border-color:var(--ok);}
   .panel-body{
     padding:14px; font-size:13px; line-height:1.6; white-space:pre-wrap;
     word-break:break-word; max-height:260px; overflow-y:auto;
@@ -81,22 +89,46 @@
   </div>
 
   <textarea id="input" placeholder="อธิบายปัญหาโค้ด หรือสิ่งที่อยากให้เขียน..."></textarea>
-  <button id="runBtn" onclick="run()">▶ RUN DIAGNOSTIC</button>
+  <button class="run" id="runBtn" onclick="run()">▶ RUN DIAGNOSTIC</button>
 
   <div class="panel" id="p1">
-    <div class="panel-head"><span><b>[01]</b> ANALYZER — GEMINI</span><span class="status" id="s1">STANDBY</span></div>
+    <div class="panel-head">
+      <span><b>[01]</b> ANALYZER — GEMINI</span>
+      <span class="head-right">
+        <button class="copy-btn" onclick="copyPanel('1', this)">⧉ COPY</button>
+        <span class="status" id="s1">STANDBY</span>
+      </span>
+    </div>
     <div class="panel-body" id="b1"></div>
   </div>
   <div class="panel" id="p2">
-    <div class="panel-head"><span><b>[02]</b> PLANNER — GROQ</span><span class="status" id="s2">STANDBY</span></div>
+    <div class="panel-head">
+      <span><b>[02]</b> PLANNER — GROQ</span>
+      <span class="head-right">
+        <button class="copy-btn" onclick="copyPanel('2', this)">⧉ COPY</button>
+        <span class="status" id="s2">STANDBY</span>
+      </span>
+    </div>
     <div class="panel-body" id="b2"></div>
   </div>
   <div class="panel" id="p3">
-    <div class="panel-head"><span><b>[03]</b> CODER — OPENROUTER</span><span class="status" id="s3">STANDBY</span></div>
+    <div class="panel-head">
+      <span><b>[03]</b> CODER — OPENROUTER</span>
+      <span class="head-right">
+        <button class="copy-btn" onclick="copyPanel('3', this)">⧉ COPY</button>
+        <span class="status" id="s3">STANDBY</span>
+      </span>
+    </div>
     <div class="panel-body" id="b3"></div>
   </div>
   <div class="panel" id="p4">
-    <div class="panel-head"><span><b>[04]</b> REVIEWER — GEMINI</span><span class="status" id="s4">STANDBY</span></div>
+    <div class="panel-head">
+      <span><b>[04]</b> REVIEWER — GEMINI</span>
+      <span class="head-right">
+        <button class="copy-btn" onclick="copyPanel('4', this)">⧉ COPY</button>
+        <span class="status" id="s4">STANDBY</span>
+      </span>
+    </div>
     <div class="panel-body" id="b4"></div>
   </div>
 
@@ -149,6 +181,30 @@ function onFail(err){
   ring.classList.remove('busy');
   btn.disabled = false; btn.textContent = '▶ RUN DIAGNOSTIC';
   alert('เกิดข้อผิดพลาด: ' + err.message);
+}
+
+function copyPanel(id, btn){
+  const text = document.getElementById('b'+id).textContent;
+  if(!text) return;
+  const done = ()=>{
+    const original = btn.textContent;
+    btn.textContent = 'COPIED';
+    btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, cb){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+  cb();
 }
 </script>
 </body>
