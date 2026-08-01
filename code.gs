@@ -86,35 +86,25 @@ function loadImportant(userId) {
   return items;
 }
 
-// ---------- แชทหลัก ----------
-function chatWithJarvis(userText, imageData, imageMimeType, userId) {
-  userId = userId || 'master';
-  const sheet = getDbSheet_();
-  sheet.appendRow([new Date(), userId, 'user', userText]);
-
-  const key = getKey_('GEMINI_API_KEY');
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=' + key;
-
-  const recent = loadHistory(userId).slice(-10);
-  const contents = recent.map(function (m, i) {
-    const isLast = i === recent.length - 1;
-    const parts = [{ text: m.text }];
-    if (isLast && imageData) {
-      parts.push({ inlineData: { mimeType: imageMimeType, data: imageData } });
+function callChatWithFallback_(prompt, imageData, imageMimeType) {
+  const attempts = [
+    { name: 'Gemini', fn: function () { return callGeminiChat_(prompt, imageData, imageMimeType); } },
+    { name: 'Groq', fn: function () { return callGroq_(prompt, 'llama-3.3-70b-versatile'); } },
+    { name: 'Mistral', fn: function () { return callMistral_(prompt, 'mistral-small-latest'); } },
+    { name: 'OpenRouter', fn: function () { return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free'); } }
+  ];
+  let lastError;
+  for (let i = 0; i < attempts.length; i++) {
+    try {
+      const reply = attempts[i].fn();
+      if (i === 0) return reply;
+      return '⚠️ (สลับไปใช้ ' + attempts[i].name + ' แทน เพราะช่องทางก่อนหน้าเต็มโควตา)\n\n' + reply;
+    } catch (e) {
+      Logger.log(attempts[i].name + ' ใช้งานไม่ได้: ' + e.message);
+      lastError = e;
     }
-    return { role: m.role === 'model' ? 'model' : 'user', parts: parts };
-  });
-
-  const payload = {
-    contents: contents,
-    systemInstruction: { parts: [{ text: JARVIS_PERSONA }] }
-  };
-
-  const json = fetchWithRetry_(url, payload, {});
-  const jarvisReply = json.candidates[0].content.parts[0].text;
-
-  sheet.appendRow([new Date(), userId, 'model', jarvisReply]);
-  return jarvisReply;
+  }
+  throw new Error('ทุกช่องทางเต็มโควตาวันนี้หมดแล้ว ลองใหม่พรุ่งนี้ครับ: ' + lastError.message);
 }
 
 // ---------- PIPELINE 4 เอเจนต์ (เรียกเมื่อกด "ลงมือทำ" เท่านั้น) ----------
