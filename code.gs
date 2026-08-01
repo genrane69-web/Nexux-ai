@@ -90,3 +90,8 @@ function fetchWithRetry_(url, payload, extraHeaders, maxRetries) {
     throw new Error('API error ' + code + ': ' + text);
   }
 }
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('J.A.R.V.I.S.')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
