@@ -116,7 +116,7 @@ textarea {
   <div class="input-row">
     <button class="attach-img-btn" onclick="document.getElementById('imgInput').click()">📷</button>
     <input type="file" id="imgInput" accept="image/*" style="display:none;" onchange="handleImage(event)">
-    <textarea id="input" rows="1" placeholder="คุยกับ Jarvis..."></textarea>
+    <textarea id="input" rows="2" placeholder="คุยกับ Jarvis..."></textarea>
     <button class="send-btn" id="sendBtn" onclick="send()">ส่ง</button>
   </div>
 
