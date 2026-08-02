@@ -47,12 +47,25 @@ function getDbSheet_() {
   return sheet;
 }
 
+// เพิ่มใหม่: สเปรดชีตแยกต่างหากสำหรับเรื่องสำคัญโดยเฉพาะ
+function getImportantSpreadsheet_() {
+  let ssId = PropertiesService.getScriptProperties().getProperty('IMPORTANT_SHEET_ID');
+  let spreadsheet;
+  if (ssId) {
+    spreadsheet = SpreadsheetApp.openById(ssId);
+  } else {
+    spreadsheet = SpreadsheetApp.create('Jarvis Important Memories');
+    PropertiesService.getScriptProperties().setProperty('IMPORTANT_SHEET_ID', spreadsheet.getId());
+  }
+  return spreadsheet;
+}
+
 function getImportantSheet_() {
-  const spreadsheet = getSpreadsheet_();
+  const spreadsheet = getImportantSpreadsheet_();
   let sheet = spreadsheet.getSheetByName('Important');
   if (!sheet) {
     sheet = spreadsheet.insertSheet('Important');
-    sheet.appendRow(['timestamp', 'userId', 'role', 'text']);
+    sheet.appendRow(['timestamp', 'userId', 'topic', 'detail']);
   }
   return sheet;
 }
