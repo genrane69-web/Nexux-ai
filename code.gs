@@ -181,34 +181,38 @@ function runJarvisPipeline(userRequest) {
 }
 
 function analyzeProblem_(userRequest) {
-  const prompt =
-    'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ช่วยวิเคราะห์ปัญหาโค้ด อ่านบทสนทนานี้แล้วสรุปสั้นๆ ว่า ' +
-    '1) ผู้ใช้ต้องการอะไรกันแน่ 2) เกี่ยวข้องกับส่วนไหนของโค้ด ' +
-    'ไม่ต้องเขียนโค้ด แค่วิเคราะห์เท่านั้น\n\nบทสนทนา:\n' + userRequest;
-  return callGemini_(prompt, 'gemini-3.5-flash-lite');
+const prompt =
+'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ช่วยวิเคราะห์ปัญหาโค้ด อ่านบทสนทนานี้แล้วสรุปสั้นๆ ว่า ' +
+'1) ผู้ใช้ต้องการอะไรกันแน่ 2) เกี่ยวข้องกับส่วนไหนของโค้ด ' +
+'ไม่ต้องเขียนโค้ด แค่วิเคราะห์เท่านั้น\n\nบทสนทนา:\n' + userRequest;
+// Gemini > Groq > Mistral > OpenRouter
+return callWithFallbackChain_(prompt, ['Gemini', 'Groq', 'Mistral', 'OpenRouter']);
 }
 
 function planFix_(analysis) {
-  const prompt =
-    'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ช่วยวางแผนแก้โค้ด จากการวิเคราะห์นี้ ให้วางแผนเป็นข้อๆ ' +
-    'ว่าต้องทำอะไรบ้างเพื่อให้ได้ตามที่ผู้ใช้ต้องการ ไม่ต้องเขียนโค้ดจริง แค่วางแผนขั้นตอน\n\n' +
-    'การวิเคราะห์: ' + analysis;
-  return callGroq_(prompt, 'llama-3.3-70b-versatile');
+const prompt =
+'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ช่วยวางแผนแก้โค้ด จากการวิเคราะห์นี้ ให้วางแผนเป็นข้อๆ ' +
+'ว่าต้องทำอะไรบ้างเพื่อให้ได้ตามที่ผู้ใช้ต้องการ ไม่ต้องเขียนโค้ดจริง แค่วางแผนขั้นตอน\n\n' +
+'การวิเคราะห์: ' + analysis;
+// Groq > Gemini > Mistral > OpenRouter
+return callWithFallbackChain_(prompt, ['Groq', 'Gemini', 'Mistral', 'OpenRouter']);
 }
 
 function writeCode_(plan) {
-  const prompt =
-    'สำคัญ: คอมเมนต์และคำอธิบายทุกจุดในโค้ดต้องเป็นภาษาไทยเท่านั้น ' +
-    '(ชื่อตัวแปร/ฟังก์ชัน/คำสั่งโปรแกรมยังเป็นอังกฤษได้ตามปกติ) ' +
-    'คุณคือโปรแกรมเมอร์ เขียนโค้ดตามแผนนี้ให้ครบถ้วน\n\nแผน: ' + plan;
-  return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free');
+const prompt =
+'สำคัญ: คอมเมนต์และคำอธิบายทุกจุดในโค้ดต้องเป็นภาษาไทยเท่านั้น ' +
+'(ชื่อตัวแปร/ฟังก์ชัน/คำสั่งโปรแกรมยังเป็นอังกฤษได้ตามปกติ) ' +
+'คุณคือโปรแกรมเมอร์ เขียนโค้ดตามแผนนี้ให้ครบถ้วน\n\nแผน: ' + plan;
+// OpenRouter > Mistral > Groq > Gemini
+return callWithFallbackChain_(prompt, ['OpenRouter', 'Mistral', 'Groq', 'Gemini']);
 }
 
 function reviewCode_(code) {
-  const prompt =
-    'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ตรวจโค้ด ตรวจโค้ดนี้หาบั๊กหรือจุดที่ควรปรับปรุง ' +
-    'สรุปเป็นข้อๆ สั้นๆ ถ้าโค้ดใช้ได้ดีอยู่แล้วให้ตอบว่า "ผ่าน"\n\nโค้ด: ' + code;
-  return callGemini_(prompt, 'gemini-3.5-flash-lite');
+const prompt =
+'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ตรวจโค้ด ตรวจโค้ดนี้หาบั๊กหรือจุดที่ควรปรับปรุง ' +
+'สรุปเป็นข้อๆ สั้นๆ ถ้าโค้ดใช้ได้ดีอยู่แล้วให้ตอบว่า "ผ่าน"\n\nโค้ด: ' + code;
+// Gemini > Groq > Mistral > OpenRouter
+return callWithFallbackChain_(prompt, ['Gemini', 'Groq', 'Mistral', 'OpenRouter']);
 }
 
 // ---------- PROVIDERS ----------
