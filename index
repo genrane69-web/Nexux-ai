@@ -315,7 +315,11 @@ function fallbackCopy(text, cb){
   try{ document.execCommand('copy'); }catch(e){}
   document.body.removeChild(ta); cb();
 }
-
+function autoResizeTextArea(textArea) {
+  // ปรับความสูงให้พอดีกับข้อความ
+  textArea.style.height = 'auto';
+  textArea.style.height = textArea.scrollHeight + 'px';
+}
 addMsg('jarvis', 'สวัสดีครับ ผมคือ Jarvis มีอะไรให้ช่วยคิดหรือวางแผนวันนี้ครับ');
 </script>
 </body>
