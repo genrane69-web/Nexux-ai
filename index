@@ -68,7 +68,10 @@
   .chip-row span{font-size:11px; color:var(--cyan); flex:1;}
   .chip-row button{background:none;border:1px solid var(--text-dim);color:var(--text-dim);border-radius:8px;font-size:11px;padding:4px 8px;}
 
-  .exec-row{padding:0 12px 8px;}
+.exec-row {
+  padding: 0 12px 8px;
+  display: none; /* เพิ่มบรรทัดนี้ถ้าต้องการซ่อนปุ่มใหญ่เพื่อคืนพื้นที่แชท */
+}
   .exec-btn{width:100%; padding:11px; background:transparent; border:1px solid var(--amber); color:var(--amber); font-family:'Orbitron',sans-serif; letter-spacing:1.5px; font-size:12px; border-radius:8px;}
   .exec-btn:disabled{border-color:var(--text-dim); color:var(--text-dim);}
 
