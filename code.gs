@@ -226,7 +226,7 @@ function callGemini_(prompt, model) {
 
 function callGeminiChat_(prompt, imageData, imageMimeType) {
   const key = getKey_('GEMINI_API_KEY');
-  const model = 'gemini-3.6-flash';
+  const model = 'gemini-1.5-flash';
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + key;
   const parts = [{ text: prompt }];
   if (imageData) {
