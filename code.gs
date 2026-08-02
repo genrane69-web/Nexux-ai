@@ -296,7 +296,7 @@ for (let i = 0; i < providersChain.length; i++) {
 const provider = providersChain[i];
 try {
 if (provider === 'Gemini') {
-return callGemini_(prompt, 'gemini-2.5-flash');
+return callGemini_(prompt, 'gemini-1.5-flash');
 } else if (provider === 'Groq') {
 return callGroq_(prompt, 'llama-3.3-70b-versatile');
 } else if (provider === 'Mistral') {
