@@ -117,6 +117,26 @@ textarea{
 
 <script>
 let pendingImage = null;
+function formatJarvisText_(text){
+  let escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  const blocks = escaped.split(/\n\s*\n/);
+  let html = '';
+  blocks.forEach(function(block){
+    const lines = block.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+    if(lines.length === 0) return;
+    const isBullet = lines.every(function(l){ return /^[-*]\s+/.test(l); });
+    const isNumbered = lines.every(function(l){ return /^\d+\.\s+/.test(l); });
+    if(isBullet){
+      html += '<ul>' + lines.map(function(l){ return '<li>'+l.replace(/^[-*]\s+/,'')+'</li>'; }).join('') + '</ul>';
+    } else if(isNumbered){
+      html += '<ol>' + lines.map(function(l){ return '<li>'+l.replace(/^\d+\.\s+/,'')+'</li>'; }).join('') + '</ol>';
+    } else {
+      html += '<p>' + lines.join('<br>') + '</p>';
+    }
+  });
+  return html || escaped;
+}
 
 function addMsg(role, text){
   const chat = document.getElementById('chat');
