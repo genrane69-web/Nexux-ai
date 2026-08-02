@@ -94,8 +94,6 @@
 <script>
 let pendingImage = null;
 
-function onKey(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(); } }
-
 function addMsg(role, text){
   const chat = document.getElementById('chat');
   const div = document.createElement('div');
