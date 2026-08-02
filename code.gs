@@ -284,3 +284,24 @@ function fetchWithRetry_(url, payload, extraHeaders, maxRetries) {
     throw new Error('API error ' + code + ': ' + text);
   }
 }
+function callWithFallbackChain_(prompt, providersChain) {
+let lastError;
+for (let i = 0; i < providersChain.length; i++) {
+const provider = providersChain[i];
+try {
+if (provider === 'Gemini') {
+return callGemini_(prompt, 'gemini-2.5-flash');
+} else if (provider === 'Groq') {
+return callGroq_(prompt, 'llama-3.3-70b-versatile');
+} else if (provider === 'Mistral') {
+return callMistral_(prompt, 'mistral-small-latest');
+} else if (provider === 'OpenRouter') {
+return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free');
+}
+} catch (e) {
+Logger.log('ค่าย ' + provider + ' ไม่สามารถใช้งานได้: ' + e.message);
+lastError = e;
+}
+}
+throw new Error('ทุกช่องทางสำรองติดโควตาหมดแล้วครับ: ' + (lastError ? lastError.message : ''));
+}
