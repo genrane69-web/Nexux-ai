@@ -32,6 +32,16 @@
   .msg.user{align-self:flex-end; background:var(--panel); border:1px solid var(--cyan-dim);}
   .msg.jarvis{align-self:flex-start; background:var(--panel); border:1px solid var(--border);}
   .msg.jarvis .tag{display:block; font-size:10px; color:var(--cyan); letter-spacing:1.5px; margin-bottom:4px;}
+  .msg-body p{margin:0 0 10px 0;}
+  .msg-body p:last-child{margin-bottom:0;}
+  .msg-body ul, .msg-body ol{margin:4px 0 10px 0; padding-left:18px;}
+  .msg-body li{margin-bottom:5px;}
+  .msg-body b{color:var(--cyan);}
+  .psec-body p{margin:0 0 8px 0;}
+  .psec-body p:last-child{margin-bottom:0;}
+  .psec-body ul, .psec-body ol{margin:4px 0 8px 0; padding-left:18px;}
+  .psec-body li{margin-bottom:4px;}
+  .psec-body b{color:var(--cyan);}
   .msg-btns{display:flex; gap:6px; margin-top:7px;}
   .copy-btn, .star-btn{background:transparent; font-family:'JetBrains Mono',monospace; font-size:10px; padding:2px 8px; border-radius:8px;}
   .copy-btn{border:1px solid var(--cyan-dim); color:var(--cyan);}
