@@ -276,7 +276,7 @@ function callWithFallbackChain_(prompt, providersChain) {
 function callGemini_(prompt, model) {
   const key = getKey_('GEMINI_API_KEY');
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + key;
-  const payload = { contents: [{ parts: [{ text: prompt }] }] };
+  const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 8192 } };
   const json = fetchWithRetry_(url, payload, {});
   trackUsage_('Gemini');
   return json.candidates[0].content.parts[0].text;
@@ -290,7 +290,7 @@ function callGeminiChat_(prompt, imageData, imageMimeType) {
   if (imageData) {
     parts.push({ inline_data: { mime_type: imageMimeType || 'image/jpeg', data: imageData } });
   }
-  const payload = { contents: [{ parts: parts }] };
+  const payload = { contents: [{ parts: parts }], generationConfig: { maxOutputTokens: 8192 } };
   const json = fetchWithRetry_(url, payload, {});
   trackUsage_('Gemini');
   return json.candidates[0].content.parts[0].text;
@@ -299,7 +299,7 @@ function callGeminiChat_(prompt, imageData, imageMimeType) {
 function callGroq_(prompt, model) {
   const key = getKey_('GROQ_API_KEY');
   const url = 'https://api.groq.com/openai/v1/chat/completions';
-  const payload = { model: model, messages: [{ role: 'user', content: prompt }] };
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }], max_tokens: 8000 };
   const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
   trackUsage_('Groq');
   return json.choices[0].message.content;
@@ -308,7 +308,7 @@ function callGroq_(prompt, model) {
 function callMistral_(prompt, model) {
   const key = getKey_('MISTRAL_API_KEY');
   const url = 'https://api.mistral.ai/v1/chat/completions';
-  const payload = { model: model, messages: [{ role: 'user', content: prompt }] };
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }], max_tokens: 8000 };
   const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
   trackUsage_('Mistral');
   return json.choices[0].message.content;
@@ -317,7 +317,7 @@ function callMistral_(prompt, model) {
 function callOpenRouter_(prompt, model) {
   const key = getKey_('OPENROUTER_API_KEY');
   const url = 'https://openrouter.ai/api/v1/chat/completions';
-  const payload = { model: model, messages: [{ role: 'user', content: prompt }] };
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }], max_tokens: 8000 };
   const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
   trackUsage_('OpenRouter');
   return json.choices[0].message.content;
