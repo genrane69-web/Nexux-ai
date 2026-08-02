@@ -117,23 +117,22 @@ function wipeAllData(userId) {
   return true;
 }
 
-// ---------- แชทหลัก ----------
 function chatWithJarvis(userText, imageData, imageMimeType) {
-  const userId = 'master';
-  appendChatLog_(userId, 'user', userText);
+const userId = 'master';
+appendChatLog_(userId, 'user', userText);
 
-  const history = loadHistory(userId);
-  const contextText = history.map(function (m) {
-    return (m.role === 'model' ? 'Jarvis' : 'ผู้ใช้') + ': ' + m.text;
-  }).join('\n');
+const history = loadHistory(userId);
+const contextText = history.map(function (m) {
+return (m.role === 'model' ? 'Jarvis' : 'ผู้ใช้') + ': ' + m.text;
+}).join('\n');
 
-  const fullPrompt = JARVIS_PERSONA +
-    '\n\nบทสนทนาที่ผ่านมา:\n' + contextText +
-    '\n\nข้อความล่าสุดจากผู้ใช้: ' + userText;
+const fullPrompt = JARVIS_PERSONA +
+'\n\nบทสนทนาที่ผ่านมา:\n' + contextText +
+'\n\nข้อความล่าสุดจากผู้ใช้: ' + userText; // ✅ นี่คือส่วนที่ถูกต้อง
 
-  const reply = callChatWithFallback_(fullPrompt, imageData, imageMimeType);
-  appendChatLog_(userId, 'model', reply);
-  return reply;
+const reply = callChatWithFallback_(fullPrompt, imageData, imageMimeType);
+appendChatLog_(userId, 'model', reply);
+return reply;
 }
 
 function callChatWithFallback_(prompt, imageData, imageMimeType) {
