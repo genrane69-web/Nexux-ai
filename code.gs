@@ -261,32 +261,34 @@ function callOpenRouter_(prompt, model) {
   return json.choices[0].message.content;
 }
 
+// ---------- ฟังก์ชันเรียกใช้ API และดักจับ Error เพื่อส่งต่อให้ระบบ Fallback ----------
 function fetchWithRetry_(url, payload, extraHeaders, maxRetries) {
-  maxRetries = maxRetries || 2;
-  const options = {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify(payload),
-    headers: extraHeaders,
-    muteHttpExceptions: true
-  };
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const response = UrlFetchApp.fetch(url, options);
-    const code = response.getResponseCode();
-    const text = response.getContentText();
+maxRetries = maxRetries || 1;
+const options = {
+method: 'post',
+contentType: 'application/json',
+payload: JSON.stringify(payload),
+headers: extraHeaders,
+muteHttpExceptions: true
+};
+for (let attempt = 0; attempt <= maxRetries; attempt++) {
+const response = UrlFetchApp.fetch(url, options);
+const code = response.getResponseCode();
+const text = response.getContentText();
 
-    if (code === 200) return JSON.parse(text);
+if (code === 200) return JSON.parse(text);
 
-    if (text.indexOf('RESOURCE_EXHAUSTED') !== -1 || text.indexOf('PerDay') !== -1) {
-      throw new Error('API error ' + code + ' (โควตารายวันหมด): ' + text);
-    }
+// ตรวจจับ Quota เต็ม หรือ Rate Limit เพื่อส่งต่อให้ระบบสลับค่ายทันที
+if (code === 429 || code === 403 || text.indexOf('RESOURCE_EXHAUSTED') !== -1 || text.indexOf('quota') !== -1) {
+throw new Error('โควตาเต็ม หรือติด Rate Limit (Code ' + code + ')');
+}
 
-    if (code === 429 && attempt < maxRetries) {
-      Utilities.sleep(Math.pow(2, attempt) * 1500);
-      continue;
-    }
-    throw new Error('API error ' + code + ': ' + text);
-  }
+if (attempt < maxRetries) {
+Utilities.sleep(1000);
+continue;
+}
+throw new Error('API Error ' + code + ': ' + text);
+}
 }
 function callWithFallbackChain_(prompt, providersChain) {
 let lastError;
