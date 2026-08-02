@@ -118,21 +118,22 @@ function wipeAllData(userId) {
 }
 
 function chatWithJarvis(userText, imageData, imageMimeType) {
-const userId = 'master';
-appendChatLog_(userId, 'user', userText);
+  const userId = 'master';
 
-const history = loadHistory(userId);
-const contextText = history.map(function (m) {
-return (m.role === 'model' ? 'Jarvis' : 'ผู้ใช้') + ': ' + m.text;
-}).join('\n');
+  const history = loadHistory(userId);   // ดึง history เดิม ก่อนที่ข้อความล่าสุดจะเข้าไปปน
+  const contextText = history.map(function (m) {
+    return (m.role === 'model' ? 'Jarvis' : 'ผู้ใช้') + ': ' + m.text;
+  }).join('\n');
 
-const fullPrompt = JARVIS_PERSONA +
-'\n\nบทสนทนาที่ผ่านมา:\n' + contextText +
-'\n\nข้อความล่าสุดจากผู้ใช้: ' + userText; // ✅ นี่คือส่วนที่ถูกต้อง
+  appendChatLog_(userId, 'user', userText);   // ค่อยบันทึกข้อความล่าสุดทีหลัง
 
-const reply = callChatWithFallback_(fullPrompt, imageData, imageMimeType);
-appendChatLog_(userId, 'model', reply);
-return reply;
+  const fullPrompt = JARVIS_PERSONA +
+    '\n\nบทสนทนาที่ผ่านมา:\n' + contextText +
+    '\n\nข้อความล่าสุดจากผู้ใช้: ' + userText;
+
+  const reply = callChatWithFallback_(fullPrompt, imageData, imageMimeType);
+  appendChatLog_(userId, 'model', reply);
+  return reply;
 }
 
 function callChatWithFallback_(prompt, imageData, imageMimeType) {
