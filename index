@@ -66,7 +66,19 @@
 
   .input-row{display:flex; gap:8px; padding:0 12px 14px; flex:0 0 auto;}
   .attach-img-btn{background:none; border:1px solid var(--cyan-dim); color:var(--cyan); border-radius:8px; padding:0 12px; font-size:16px; flex:0 0 auto;}
-  textarea{flex:1; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:10px; font-family:inherit; font-size:16px; resize:none; max-height:100px;}
+textarea {
+  flex: 1;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 12px;           /* เพิ่มระยะห่างข้างในช่องพิมพ์ */
+  font-family: inherit;
+  font-size: 16px;
+  resize: vertical;        /* อนุญาตให้ใช้เม้าส์ดึงขยายความสูงเองได้ */
+  min-height: 60px;        /* ความสูงเริ่มต้น (เพิ่มขึ้นจากเดิม) */
+  max-height: 250px;       /* ปรับขีดจำกัดความสูงให้พิมพ์ได้หลายบรรทัดขึ้น */
+}
   textarea:focus{outline:none; border-color:var(--cyan);}
   .send-btn{background:transparent; border:1px solid var(--cyan); color:var(--cyan); border-radius:8px; padding:0 16px; font-family:'Orbitron',sans-serif; font-size:12px;}
   .send-btn:disabled{border-color:var(--text-dim); color:var(--text-dim);}
