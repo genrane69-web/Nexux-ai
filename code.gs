@@ -182,7 +182,7 @@ function callOpenRouter_(prompt, model) {
 }
 
 function fetchWithRetry_(url, payload, extraHeaders, maxRetries) {
-  maxRetries = maxRetries || 3;
+  maxRetries = maxRetries || 2;
   const options = {
     method: 'post',
     contentType: 'application/json',
@@ -194,11 +194,20 @@ function fetchWithRetry_(url, payload, extraHeaders, maxRetries) {
     const response = UrlFetchApp.fetch(url, options);
     const code = response.getResponseCode();
     const text = response.getContentText();
+
     if (code === 200) return JSON.parse(text);
+
+    // โควตารายวันหมด (RESOURCE_EXHAUSTED) รอเท่าไหร่ก็ไม่หาย ข้ามไปเจ้าถัดไปทันที ไม่ต้อง retry
+    if (text.indexOf('RESOURCE_EXHAUSTED') !== -1 || text.indexOf('PerDay') !== -1) {
+      throw new Error('API error ' + code + ' (โควตารายวันหมด): ' + text);
+    }
+
     if (code === 429 && attempt < maxRetries) {
-      Utilities.sleep(Math.pow(2, attempt) * 2000);
+      Utilities.sleep(Math.pow(2, attempt) * 1500); // 1.5s, 3s
       continue;
     }
     throw new Error('API error ' + code + ': ' + text);
   }
 }
+
+
