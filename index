@@ -29,15 +29,7 @@
   .usage-bar{width:100%; font-size:10px; color:var(--text-dim); padding:4px 16px 8px; border-bottom:1px solid var(--border); letter-spacing:.3px;}
 
   .chat{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px;}
-.msg {
-  max-width: 90%;          /* ขยายความกว้างกล่องข้อความ */
-  padding: 12px 16px;      /* เพิ่มพื้นที่ว่างข้างในกล่องข้อความ */
-  border-radius: 10px;
-  font-size: 15px;         /* ขยายขนาดตัวหนังสือจาก 13.5px เป็น 15px */
-  line-height: 1.6;
-  word-break: break-word;
-  touch-action: pan-y;
-}
+  .msg{max-width:88%; padding:10px 13px; border-radius:10px; font-size:13.5px; line-height:1.55; word-break:break-word; touch-action:pan-y;}
   .msg.user{align-self:flex-end; background:var(--panel); border:1px solid var(--cyan-dim);}
   .msg.jarvis{align-self:flex-start; background:var(--panel); border:1px solid var(--border);}
   .msg.jarvis .tag{display:block; font-size:10px; color:var(--cyan); letter-spacing:1.5px; margin-bottom:4px;}
@@ -61,48 +53,19 @@
   .psec-body p{margin:0 0 8px 0;} .psec-body p:last-child{margin-bottom:0;}
   .psec-body ul, .psec-body ol{margin:4px 0 8px 0; padding-left:18px;} .psec-body li{margin-bottom:4px;}
   .psec-body b{color:var(--cyan);}
-  .del-btn{background:transparent; border:1px solid #ff6b6b; color:#ff6b6b; font-family:'JetBrains Mono',monospace; font-size:10px; padding:2px 8px; border-radius:8px;}
 
   .chip-row{display:none; align-items:center; gap:8px; padding:0 12px 10px;}
   .chip-row img{height:48px; border-radius:6px; border:1px solid var(--cyan-dim);}
   .chip-row span{font-size:11px; color:var(--cyan); flex:1;}
   .chip-row button{background:none;border:1px solid var(--text-dim);color:var(--text-dim);border-radius:8px;font-size:11px;padding:4px 8px;}
 
-/* ลบ display: none; ออก แล้วปรับระยะห่างให้น้อยลง */
-.exec-row {
-  padding: 0 12px 4px; 
-}
-
-/* ปรับปุ่มให้เตี้ยลง และตัวอักษรเล็กลง */
-.exec-btn {
-  width: 100%;
-  padding: 5px 10px;             /* ลดความสูงปุ่มลง (เดิม 11px เหลือ 5px) */
-  background: transparent;
-  border: 1px solid var(--amber);
-  color: var(--amber);
-  font-family: 'Orbitron', sans-serif;
-  letter-spacing: 1px;
-  font-size: 10px;               /* ลดขนาดตัวหนังสือลง (เดิม 12px เหลือ 10px) */
-  border-radius: 6px;
-}
+  .exec-row{padding:0 12px 8px;}
   .exec-btn{width:100%; padding:11px; background:transparent; border:1px solid var(--amber); color:var(--amber); font-family:'Orbitron',sans-serif; letter-spacing:1.5px; font-size:12px; border-radius:8px;}
   .exec-btn:disabled{border-color:var(--text-dim); color:var(--text-dim);}
 
   .input-row{display:flex; gap:8px; padding:0 12px 14px; flex:0 0 auto;}
   .attach-img-btn{background:none; border:1px solid var(--cyan-dim); color:var(--cyan); border-radius:8px; padding:0 12px; font-size:16px; flex:0 0 auto;}
-textarea {
-  flex: 1;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 12px;           /* เพิ่มระยะห่างข้างในช่องพิมพ์ */
-  font-family: inherit;
-  font-size: 16px;
-  resize: vertical;        /* อนุญาตให้ใช้เม้าส์ดึงขยายความสูงเองได้ */
-  min-height: 60px;        /* ความสูงเริ่มต้น (เพิ่มขึ้นจากเดิม) */
-  max-height: 250px;       /* ปรับขีดจำกัดความสูงให้พิมพ์ได้หลายบรรทัดขึ้น */
-}
+  textarea{flex:1; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:10px; font-family:inherit; font-size:16px; resize:none; max-height:100px;}
   textarea:focus{outline:none; border-color:var(--cyan);}
   .send-btn{background:transparent; border:1px solid var(--cyan); color:var(--cyan); border-radius:8px; padding:0 16px; font-family:'Orbitron',sans-serif; font-size:12px;}
   .send-btn:disabled{border-color:var(--text-dim); color:var(--text-dim);}
@@ -115,7 +78,6 @@ textarea {
     <h1>J.A.R.V.I.S.</h1>
     <button class="icon-btn" onclick="loadOldHistory()">📜</button>
     <button class="icon-btn" onclick="viewImportant()">⭐</button>
-    <button class="icon-btn" onclick="attachProject()">🔗</button>
     <button class="icon-btn" onclick="clearScreen()">🧹</button>
     <button class="icon-btn" onclick="deleteAllData()">🗑️</button>
   </div>
@@ -128,10 +90,6 @@ textarea {
     <img id="previewThumb"><span>รูปที่แนบ</span>
     <button onclick="clearImage()">ลบ</button>
   </div>
-  <div class="chip-row" id="projectChip">
-    <span id="projectChipText"></span>
-    <button onclick="clearProject()">ลบ</button>
-  </div>
 
   <div class="exec-row">
     <button class="exec-btn" id="execBtn" onclick="executePipeline()">🚀 ลงมือทำจากบทสนทนานี้</button>
@@ -140,13 +98,12 @@ textarea {
   <div class="input-row">
     <button class="attach-img-btn" onclick="document.getElementById('imgInput').click()">📷</button>
     <input type="file" id="imgInput" accept="image/*" style="display:none;" onchange="handleImage(event)">
-    <textarea id="input" rows="2" placeholder="คุยกับ Jarvis..."></textarea>
+    <textarea id="input" rows="1" placeholder="คุยกับ Jarvis..."></textarea>
     <button class="send-btn" id="sendBtn" onclick="send()">ส่ง</button>
   </div>
 
 <script>
 let pendingImage = null;
-let attachedProjectCode = null;
 
 function formatJarvisText_(text){
   let escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -267,27 +224,11 @@ function deleteAllData(){
   google.script.run
     .withSuccessHandler(function(){
       document.getElementById('chat').innerHTML = '';
-      addMsg('jarvis', 'ล้างแชทเก่าทั้งหมดเรียบร้อยแล้วครับ เรื่องสำคัญยังอยู่ครบ');
+      addMsg('jarvis', 'ล้างแชทเก่าทั้งหมดเรียบร้อยแล้วครับ เรองสำคัญยังอยู่ครบ');
     })
     .withFailureHandler(function(err){ alert('ลบไม่สำเร็จ: ' + err.message); })
     .wipeAllData();
 }
-
-function attachProject(){
-  const id = prompt('วาง Script ID ของโปรเจกต์ที่ต้องการเชื่อม (⚙️ > รหัสสคริปต์ ของโปรเจกต์นั้น)');
-  if(!id) return;
-  const chip = document.getElementById('projectChip');
-  chip.style.display = 'flex';
-  document.getElementById('projectChipText').textContent = 'กำลังเชื่อมไฟล์...';
-  google.script.run
-    .withSuccessHandler(function(code){
-      attachedProjectCode = code;
-      document.getElementById('projectChipText').textContent = '📄 เชื่อมไฟล์แล้ว (' + code.length + ' ตัวอักษร)';
-    })
-    .withFailureHandler(function(err){ chip.style.display = 'none'; alert('เชื่อมไฟล์ไม่สำเร็จ: ' + err.message); })
-    .fetchExternalProject(id);
-}
-function clearProject(){ attachedProjectCode = null; document.getElementById('projectChip').style.display = 'none'; }
 
 function handleImage(e){
   const file = e.target.files[0]; if(!file) return;
@@ -337,7 +278,7 @@ function send(){
   ring.classList.add('busy'); sendBtn.disabled = true;
   const chat = document.getElementById('chat');
   const typing = document.createElement('div'); typing.className = 'typing'; typing.id = 'typing';
-  typing.textContent = 'Jarvis กำลังพิมพ์...'; chat.appendChild(typing); chat.scrollTop = chat.scrollHeight;
+  typing.textContent = 'Jarvis กำลังพมพ์...'; chat.appendChild(typing); chat.scrollTop = chat.scrollHeight;
 
   google.script.run
     .withSuccessHandler(function(result){
@@ -352,29 +293,58 @@ function send(){
       ring.classList.remove('busy'); sendBtn.disabled = false;
       addMsg('jarvis', 'เกิดข้อผิดพลาด: ' + err.message);
     })
-    .chatWithJarvis(text, imgData, imgMime, attachedProjectCode);
+    .chatWithJarvis(text, imgData, imgMime);
 }
 
 function executePipeline(){
-  const ring = document.getElementById('ring'); const execBtn = document.getElementById('execBtn');
-  ring.classList.add('busy'); execBtn.disabled = true; execBtn.textContent = 'กำลังดำเนินการ 4 ขั้นตอน...';
+  const ring = document.getElementById('ring');
+  const execBtn = document.getElementById('execBtn');
+  ring.classList.add('busy'); execBtn.disabled = true;
   const chat = document.getElementById('chat');
-  const typing = document.createElement('div'); typing.className = 'typing'; typing.id = 'typing2';
-  typing.textContent = 'Jarvis กำลังวิเคราะห์ วางแผน เขียนโค้ด ตรวจสอบ...';
+  const typing = document.createElement('div');
+  typing.className = 'typing'; typing.id = 'typing2';
+  typing.textContent = 'Jarvis กำลังเตรียมข้อมูล...';
   chat.appendChild(typing); chat.scrollTop = chat.scrollHeight;
 
+  function fail(stage, err){
+    const t = document.getElementById('typing2'); if(t) t.remove();
+    ring.classList.remove('busy'); execBtn.disabled = false; execBtn.textContent = '🚀 ลงมือทำจากบทสนทนานี้';
+    addMsg('jarvis', 'เกิดข้อผิดพลาดที่ขั้นตอน "' + stage + '": ' + (err && err.message ? err.message : 'ไม่ทราบสาเหตุ'));
+  }
+
   google.script.run
-    .withSuccessHandler(function(result){
-      document.getElementById('typing2').remove();
-      ring.classList.remove('busy'); execBtn.disabled = false; execBtn.textContent = '🚀 ลงมือทำจากบทสนทนานี้';
-      addPipelineCard(result); refreshUsage_();
+    .withSuccessHandler(function(transcript){
+      typing.textContent = 'Jarvis กำลังวิเคราะห์...';
+      google.script.run
+        .withSuccessHandler(function(analysis){
+          typing.textContent = 'Jarvis กำลังวางแผน...';
+          google.script.run
+            .withSuccessHandler(function(plan){
+              typing.textContent = 'Jarvis กำลังเขียนโค้ด...';
+              google.script.run
+                .withSuccessHandler(function(code){
+                  typing.textContent = 'Jarvis กำลังตรวจสอบ...';
+                  google.script.run
+                    .withSuccessHandler(function(review){
+                      document.getElementById('typing2').remove();
+                      ring.classList.remove('busy'); execBtn.disabled = false; execBtn.textContent = '🚀 ลงมือทำจากบทสนทนานี้';
+                      addPipelineCard({analysis:analysis, plan:plan, code:code, review:review});
+                      refreshUsage_();
+                    })
+                    .withFailureHandler(function(err){ fail('ตรวจสอบ', err); })
+                    .stageReview(code);
+                })
+                .withFailureHandler(function(err){ fail('เขียนโค้ด', err); })
+                .stageCode(plan);
+            })
+            .withFailureHandler(function(err){ fail('วางแผน', err); })
+            .stagePlan(analysis);
+        })
+        .withFailureHandler(function(err){ fail('วิเคราะห์', err); })
+        .stageAnalyze(transcript);
     })
-    .withFailureHandler(function(err){
-      document.getElementById('typing2').remove();
-      ring.classList.remove('busy'); execBtn.disabled = false; execBtn.textContent = '🚀 ลงมือทำจากบทสนทนานี้';
-      addMsg('jarvis', 'เกิดข้อผิดพลาดตอนลงมือทำ: ' + err.message);
-    })
-    .executeFromChat(null, attachedProjectCode);
+    .withFailureHandler(function(err){ fail('เตรียมข้อมูล', err); })
+    .buildTranscript();
 }
 
 function copyText(text, btn){
@@ -393,7 +363,7 @@ function fallbackCopy(text, cb){
   document.body.removeChild(ta); cb();
 }
 
-addMsg('jarvis', 'สวัสดีครับ ผมคือ Jarvis มีอะไรให้ช่วยคิดหรือวางแผนวันนี้ครับ');
+addMsg('jarvis', 'สวัสดีครบ ผมคือ Jarvis มีอะไรให้ช่วยคิดหรือวางแผนวันนี้ครับ');
 refreshUsage_();
 </script>
 </body>
