@@ -1,14 +1,12 @@
 /**
  * J.A.R.V.I.S. — ผู้ช่วยแชท AI ส่วนตัว
- * คุยวางแผนก่อน กด "ลงมือทำ" ค่อยรัน pipeline 4 เอเจนต์
- * เชื่อมอ่านโค้ดจริงจากโปรเจกต์อื่นได้ (ผ่าน Script ID)
- * ปัดซ้ายลบข้อความทีละอัน, โชว์โควตาที่ใช้ไปวันนี้
+ * คุยวางแผนก่อน กด "ลงมือทำ" ค่อยรัน 4 ขั้นตอน (แยกเรียกทีละขั้น กันชนลิมิตเวลา 6 นาทีของ Apps Script)
  */
 
 const JARVIS_PERSONA =
   'คุณคือ Jarvis ผู้ช่วย AI ส่วนตัวของผู้ใช้ พูดจาสุภาพ กระชับ ฉลาด มีมาดนิดๆ แบบ Jarvis ใน Iron Man ' +
-  'หน้าที่หลักคือช่วยคิดและวางแผนเรื่องโค้ดกับผู้ใช้ ผู้ใช้อาจแนบภาพหน้าจอ หรือเชื่อมไฟล์โค้ดจริงมาให้ดูด้วย ' +
-  'ถ้ามีภาพหรือโค้ดโปรเจกต์แนบมา ให้ใช้ประกอบคำตอบเสมอ ' +
+  'หน้าที่หลักคือช่วยคิดและวางแผนเรื่องโค้ดกับผู้ใช้ ผู้ใช้อาจแนบภาพหน้าจอมาให้ดูด้วย ' +
+  'ถ้ามีภาพแนบมา ให้ดูภาพประกอบคำถามเสมอ ' +
   'สำคัญมาก: อย่ารีบเขียนโค้ดหรือรีบสรุปวิธีแก้ปัญหาทันทีถ้ายังไม่เข้าใจสิ่งที่ผู้ใช้ต้องการชัดเจน ' +
   'ให้ถามคำถามกลับเพื่อทำความเข้าใจก่อนเสมอถ้าข้อมูลยังไม่พอ เมื่อเข้าใจชัดพอแล้วให้บอกผู้ใช้ว่าพร้อมกดปุ่ม "ลงมือทำ" ได้เลย ' +
   'ห้ามพูดว่าคุณได้บันทึก จัดเก็บ หรือทำการอัตโนมัติใดๆ ในระบบเบื้องหลังเด็ดขาด เพราะคุณไม่รู้จริงว่าเบื้องหลังทำอะไรไปบ้าง ' +
@@ -51,7 +49,7 @@ function getDbSheet_() {
   return sheet;
 }
 
-// ---------- ฐานข้อมูลเรื่องสำคัญ (แยกชีท ห้ามลบอัตโนมัติ) ----------
+// ---------- ฐานข้อมูลเรื่องสำคัญ ----------
 function getImportantSpreadsheet_() {
   let ssId = PropertiesService.getScriptProperties().getProperty('IMPORTANT_SHEET_ID');
   let spreadsheet;
@@ -135,36 +133,8 @@ function wipeAllData(userId) {
   return true;
 }
 
-// ---------- อ่านโค้ดจากโปรเจกต์ Apps Script อื่น ----------
-function fetchProjectCode_(scriptId) {
-  const token = ScriptApp.getOAuthToken();
-  const url = 'https://script.googleapis.com/v1/projects/' + scriptId + '/content';
-  const response = UrlFetchApp.fetch(url, {
-    headers: { Authorization: 'Bearer ' + token },
-    muteHttpExceptions: true
-  });
-  const code = response.getResponseCode();
-  if (code !== 200) {
-    throw new Error('รหัส ' + code + ': ' + response.getContentText());
-  }
-  const data = JSON.parse(response.getContentText());
-  return data.files.map(function (f) {
-    return '--- ไฟล์: ' + f.name + ' ---\n' + f.source;
-  }).join('\n\n');
-}
-
-function fetchExternalProject(scriptId) {
-  try {
-    const code = fetchProjectCode_(scriptId);
-    const maxChars = 12000;
-    return code.length > maxChars ? code.slice(0, maxChars) + '\n\n...(ตัดบางส่วนออก เพราะยาวเกินไป)' : code;
-  } catch (e) {
-    throw new Error('ดึงโค้ดไม่สำเร็จ: ' + e.message + ' — เช็คว่าเปิดสวิตช์ "Google Apps Script API" ที่ script.google.com/home/usersettings แล้ว และ Script ID ถูกต้อง');
-  }
-}
-
 // ---------- แชทหลัก ----------
-function chatWithJarvis(userText, imageData, imageMimeType, externalCode) {
+function chatWithJarvis(userText, imageData, imageMimeType) {
   const userId = 'master';
   const history = loadHistory(userId);
   const contextText = history.map(function (m) {
@@ -173,12 +143,9 @@ function chatWithJarvis(userText, imageData, imageMimeType, externalCode) {
 
   const userTs = appendChatLog_(userId, 'user', userText);
 
-  let fullPrompt = JARVIS_PERSONA +
+  const fullPrompt = JARVIS_PERSONA +
     '\n\nบทสนทนาที่ผ่านมา:\n' + contextText +
     '\n\nข้อความล่าสุดจากผู้ใช้: ' + userText;
-  if (externalCode) {
-    fullPrompt += '\n\nโค้ดจริงจากโปรเจกต์ที่ผู้ใช้เชื่อมไว้:\n' + externalCode;
-  }
 
   const reply = callChatWithFallback_(fullPrompt, imageData, imageMimeType);
   const modelTs = appendChatLog_(userId, 'model', reply);
@@ -188,9 +155,9 @@ function chatWithJarvis(userText, imageData, imageMimeType, externalCode) {
 function callChatWithFallback_(prompt, imageData, imageMimeType) {
   const attempts = [
     { name: 'Gemini', fn: function () { return callGeminiChat_(prompt, imageData, imageMimeType); } },
-    { name: 'Groq', fn: function () { return callGroq_(prompt, 'llama-3.3-70b-versatile'); } },
-    { name: 'Mistral', fn: function () { return callMistral_(prompt, 'mistral-small-latest'); } },
-    { name: 'OpenRouter', fn: function () { return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free'); } }
+    { name: 'Groq', fn: function () { return callGroq_(prompt, 'llama-3.3-70b-versatile', 2048); } },
+    { name: 'Mistral', fn: function () { return callMistral_(prompt, 'mistral-small-latest', 2048); } },
+    { name: 'OpenRouter', fn: function () { return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free', 2048); } }
   ];
   let lastError;
   for (let i = 0; i < attempts.length; i++) {
@@ -206,64 +173,52 @@ function callChatWithFallback_(prompt, imageData, imageMimeType) {
   throw new Error('ทุกช่องทางเต็มโควตาวันนี้หมดแล้ว ลองใหม่พรุ่งนี้ครับ: ' + lastError.message);
 }
 
-// ---------- PIPELINE 4 เอเจนต์ ----------
-function executeFromChat(userId, externalCode) {
-  userId = userId || 'master';
+// ---------- PIPELINE 4 ขั้นตอน (เรียกแยกทีละขั้นจากหน้าเว็บ กันชนลิมิตเวลา) ----------
+function buildTranscript() {
+  const userId = 'master';
   const recent = loadHistory(userId).slice(-14);
-  let transcript = recent.map(function (m) {
+  return recent.map(function (m) {
     return (m.role === 'model' ? 'Jarvis' : 'ผู้ใช้') + ': ' + m.text;
   }).join('\n');
-  if (externalCode) {
-    transcript = 'โค้ดจริงจากโปรเจกต์ที่เชื่อมไว้:\n' + externalCode + '\n\n' + transcript;
-  }
-  return runJarvisPipeline(transcript);
 }
 
-function runJarvisPipeline(userRequest) {
-  const analysis = analyzeProblem_(userRequest);
-  const plan = planFix_(analysis);
-  const code = writeCode_(plan);
-  const review = reviewCode_(code);
-  return { analysis: analysis, plan: plan, code: code, review: review };
-}
-
-function analyzeProblem_(userRequest) {
+function stageAnalyze(transcript) {
   const prompt =
     'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ช่วยวิเคราะห์ปัญหาโค้ด อ่านบทสนทนานี้แล้วสรุปสั้นๆ ว่า ' +
-    '1) ผู้ใช้ต้องการอะไรกันแน่ 2) เกี่ยวข้องกับส่วนไหนของโค้ด ไม่ต้องเขียนโค้ด แค่วิเคราะห์เท่านั้น\n\nบทสนทนา:\n' + userRequest;
-  return callWithFallbackChain_(prompt, ['Gemini', 'Groq', 'Mistral', 'OpenRouter']);
+    '1) ผู้ใช้ต้องการอะไรกันแน่ 2) เกี่ยวข้องกับส่วนไหนของโค้ด ไม่ต้องเขียนโค้ด แค่วิเคราะห์เท่านั้น\n\nบทสนทนา:\n' + transcript;
+  return callWithFallbackChain_(prompt, ['Gemini', 'Groq', 'Mistral', 'OpenRouter'], 2048);
 }
 
-function planFix_(analysis) {
+function stagePlan(analysis) {
   const prompt =
     'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ช่วยวางแผนแก้โค้ด จากการวิเคราะห์นี้ ให้วางแผนเป็นข้อๆ ' +
     'ว่าต้องทำอะไรบ้างเพื่อให้ได้ตามที่ผู้ใช้ต้องการ ไม่ต้องเขียนโค้ดจริง แค่วางแผนขั้นตอน\n\nการวิเคราะห์: ' + analysis;
-  return callWithFallbackChain_(prompt, ['Groq', 'Gemini', 'Mistral', 'OpenRouter']);
+  return callWithFallbackChain_(prompt, ['Groq', 'Gemini', 'Mistral', 'OpenRouter'], 2048);
 }
 
-function writeCode_(plan) {
+function stageCode(plan) {
   const prompt =
     'สำคัญ: คอมเมนต์และคำอธิบายทุกจุดในโค้ดต้องเป็นภาษาไทยเท่านั้น ' +
     '(ชื่อตัวแปร/ฟังก์ชัน/คำสั่งโปรแกรมยังเป็นอังกฤษได้ตามปกติ) คุณคือโปรแกรมเมอร์ เขียนโค้ดตามแผนนี้ให้ครบถ้วน\n\nแผน: ' + plan;
-  return callWithFallbackChain_(prompt, ['OpenRouter', 'Mistral', 'Groq', 'Gemini']);
+  return callWithFallbackChain_(prompt, ['OpenRouter', 'Mistral', 'Groq', 'Gemini'], 8192);
 }
 
-function reviewCode_(code) {
+function stageReview(code) {
   const prompt =
     'ตอบเป็นภาษาไทยทั้งหมด คุณคือผู้ตรวจโค้ด ตรวจโค้ดนี้หาบั๊กหรือจุดที่ควรปรับปรุง ' +
     'สรุปเป็นข้อๆ สั้นๆ ถ้าโค้ดใช้ได้ดีอยู่แล้วให้ตอบว่า "ผ่าน"\n\nโค้ด: ' + code;
-  return callWithFallbackChain_(prompt, ['Gemini', 'Groq', 'Mistral', 'OpenRouter']);
+  return callWithFallbackChain_(prompt, ['Gemini', 'Groq', 'Mistral', 'OpenRouter'], 2048);
 }
 
-function callWithFallbackChain_(prompt, providersChain) {
+function callWithFallbackChain_(prompt, providersChain, maxTokens) {
   let lastError;
   for (let i = 0; i < providersChain.length; i++) {
     const provider = providersChain[i];
     try {
-      if (provider === 'Gemini') return callGemini_(prompt, 'gemini-3.5-flash-lite');
-      if (provider === 'Groq') return callGroq_(prompt, 'llama-3.3-70b-versatile');
-      if (provider === 'Mistral') return callMistral_(prompt, 'mistral-small-latest');
-      if (provider === 'OpenRouter') return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free');
+      if (provider === 'Gemini') return callGemini_(prompt, 'gemini-3.5-flash-lite', maxTokens);
+      if (provider === 'Groq') return callGroq_(prompt, 'llama-3.3-70b-versatile', maxTokens);
+      if (provider === 'Mistral') return callMistral_(prompt, 'mistral-small-latest', maxTokens);
+      if (provider === 'OpenRouter') return callOpenRouter_(prompt, 'openai/gpt-oss-20b:free', maxTokens);
     } catch (e) {
       Logger.log('ค่าย ' + provider + ' ไม่สามารถใช้งานได้: ' + e.message);
       lastError = e;
@@ -272,11 +227,11 @@ function callWithFallbackChain_(prompt, providersChain) {
   throw new Error('ทุกช่องทางสำรองติดโควตาหมดแล้วครับ: ' + (lastError ? lastError.message : ''));
 }
 
-// ---------- PROVIDERS (มีติดตามการใช้งานในตัว) ----------
-function callGemini_(prompt, model) {
+// ---------- PROVIDERS ----------
+function callGemini_(prompt, model, maxTokens) {
   const key = getKey_('GEMINI_API_KEY');
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + key;
-  const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 8192 } };
+  const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: maxTokens || 2048 } };
   const json = fetchWithRetry_(url, payload, {});
   trackUsage_('Gemini');
   return json.candidates[0].content.parts[0].text;
@@ -290,34 +245,34 @@ function callGeminiChat_(prompt, imageData, imageMimeType) {
   if (imageData) {
     parts.push({ inline_data: { mime_type: imageMimeType || 'image/jpeg', data: imageData } });
   }
-  const payload = { contents: [{ parts: parts }], generationConfig: { maxOutputTokens: 8192 } };
+  const payload = { contents: [{ parts: parts }], generationConfig: { maxOutputTokens: 4096 } };
   const json = fetchWithRetry_(url, payload, {});
   trackUsage_('Gemini');
   return json.candidates[0].content.parts[0].text;
 }
 
-function callGroq_(prompt, model) {
+function callGroq_(prompt, model, maxTokens) {
   const key = getKey_('GROQ_API_KEY');
   const url = 'https://api.groq.com/openai/v1/chat/completions';
-  const payload = { model: model, messages: [{ role: 'user', content: prompt }], max_tokens: 8000 };
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }], max_tokens: maxTokens || 2048 };
   const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
   trackUsage_('Groq');
   return json.choices[0].message.content;
 }
 
-function callMistral_(prompt, model) {
+function callMistral_(prompt, model, maxTokens) {
   const key = getKey_('MISTRAL_API_KEY');
   const url = 'https://api.mistral.ai/v1/chat/completions';
-  const payload = { model: model, messages: [{ role: 'user', content: prompt }], max_tokens: 8000 };
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }], max_tokens: maxTokens || 2048 };
   const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
   trackUsage_('Mistral');
   return json.choices[0].message.content;
 }
 
-function callOpenRouter_(prompt, model) {
+function callOpenRouter_(prompt, model, maxTokens) {
   const key = getKey_('OPENROUTER_API_KEY');
   const url = 'https://openrouter.ai/api/v1/chat/completions';
-  const payload = { model: model, messages: [{ role: 'user', content: prompt }], max_tokens: 8000 };
+  const payload = { model: model, messages: [{ role: 'user', content: prompt }], max_tokens: maxTokens || 2048 };
   const json = fetchWithRetry_(url, payload, { Authorization: 'Bearer ' + key });
   trackUsage_('OpenRouter');
   return json.choices[0].message.content;
